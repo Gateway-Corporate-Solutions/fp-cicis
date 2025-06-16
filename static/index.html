@@ -13,7 +13,7 @@
     </script>
     <script defer>
         // Open a websocket connection to FP-Devicer
-        var ws = new WebSocket("ws://localhost:8000/wss");
+        var ws = new WebSocket(`ws://${location.host}/wss`);
 
         ws.onmessage = function(event) {
             // Handle incoming messages from the server

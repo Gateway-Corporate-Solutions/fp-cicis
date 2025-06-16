@@ -78,5 +78,5 @@ router.get('/:file', async (context) => {
 app.use(router.routes());
 app.use(router.allowedMethods());
 
-app.listen({ port: 8000 });
+app.listen({ port: parseInt(Deno.env.get('PORT') ?? '8000') });
 console.log('Server is running on http://localhost:8000');
