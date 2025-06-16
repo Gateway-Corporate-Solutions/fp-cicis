@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FP-Cicis Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="/bundle.js"></script>
+    <script defer>
+        var Snatch = window["snatch"];
+        var agent = new Snatch;
+        console.log(agent.dataset);
+    </script>
+    <script defer>
+        // Open a websocket connection to FP-Devicer
+        var ws = new WebSocket("ws://localhost:8000/wss");
+
+        ws.onmessage = function(event) {
+            // Handle incoming messages from the server
+            var message = JSON.parse(event.data);
+            if (message.type === "fingerprint") {
+                console.log("Fingerprint received from FP-Devicer: ", message.data);
+                var p = document.getElementById("fingerprint");
+                p.innerHTML = `Fingerprint Hash: ${message.data.hash}<br>`
+                switch(true) {
+                  case message.data.closestMatch == 100:
+                    p.innerHTML += `Closest Match: ${message.data.closestMatch} (Exact Match)<br>`;
+                    break;
+                  case message.data.closestMatch > 90:
+                    p.innerHTML += `Closest Match: ${message.data.closestMatch} (Very Close Match)<br>`;
+                    break;
+                  case message.data.closestMatch > 50:
+                    p.innerHTML += `Closest Match: ${message.data.closestMatch} (Partial Match)<br>`;
+                    break;
+                  default:
+                    p.innerHTML += `Closest Match: ${message.data.closestMatch} (No Match)<br>`;
+                    break;
+                }
+                p.innerHTML += `
+                    User Agent: ${agent.dataset.userAgent}<br>
+                    Platform: ${agent.dataset.platform}<br>
+                    Timezone: ${agent.dataset.timezone}<br>
+                    User Data: ${JSON.stringify(agent.dataset)}<br>
+                `;
+            }
+        };
+
+        ws.onopen = function() {
+            console.log("WebSocket connection established with FP-Devicer.");
+            // Send a message to the server
+            ws.send(JSON.stringify({
+                type: "data",
+                data: agent.dataset
+            }));
+        };
+    </script>
+</head>
+<body>
+    <div id="header">
+      <h1>FP-Cicis Demo</h1>
+      <p>This is a simple demo of FP-Cicis.</p>
+    </div>
+    <div id="content">
+        <p id="fingerprint">Fingerprint goes here...</p>
+    </div>
+</body>

@@ -1,0 +1,12 @@
+{
+  "tasks": {
+    "dev": "deno run --allow-all --watch main.ts"
+  },
+  "imports": {
+    "oak": "jsr:@oak/oak",
+    "devicer": "npm:devicer.js",
+    "snatch": "npm:snatch.js",
+    "sqlite": "jsr:@db/sqlite"
+  },
+  "nodeModulesDir": "auto"
+}
