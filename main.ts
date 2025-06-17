@@ -59,10 +59,10 @@ router.get('/wss', async (context) => {
   }
 });
 
-router.get('/:file', async (context) => {
+router.get('/:file', (context) => {
   const filePath = `./static/${context.params.file}`;
   try {
-    const fileContent = await Deno.readTextFile(filePath);
+    const fileContent = Deno.readTextFileSync(filePath);
     context.response.body = fileContent;
   } catch (error) {
     if (error instanceof Deno.errors.NotFound) {
