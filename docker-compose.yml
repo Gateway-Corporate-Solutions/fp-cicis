@@ -1,0 +1,35 @@
+services:
+  deno:
+    container_name: deno
+    image: deno:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./main.sqlite:/app/main.sqlite
+      - ./routes/blog:/app/routes/blog
+      - ./static:/app/static
+      - ./logs/app.log:/app/app.log
+    env_file:
+      - .env.list
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./logs/access.log:/var/log/nginx/access.log
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+    depends_on:
+      - certbot
+  certbot:
+    container_name: certbot
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
