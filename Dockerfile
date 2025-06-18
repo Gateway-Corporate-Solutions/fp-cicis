@@ -11,6 +11,6 @@ EXPOSE 8000
 
 RUN apt-get update && apt-get install -y sqlite3
 
-RUN deno task build
+RUN deno task start
 
 CMD ["run", "-A", "main.ts"]
