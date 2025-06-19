@@ -48,6 +48,11 @@
         ]).then(function(highEntropyValues) {
             agent.dataset.highEntropyValues = highEntropyValues;
         });
+        agent.dataset.delete("appName");
+        agent.dataset.delete("appCodeName");
+        agent.dataset.delete("product");
+        agent.dataset.delete("productSub");
+        agent.dataset.delete("permissions");
         console.log(agent.dataset);
     </script>
     <script defer>
