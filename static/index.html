@@ -76,6 +76,12 @@
                 console.error("Error from FP-Devicer: ", message.data);
                 var p = document.getElementById("fingerprint");
                 p.innerHTML = `Error: ${message.data}`;
+                p.innerHTML += `
+                    User Agent: ${agent.dataset.userAgent}<br>
+                    Platform: ${agent.dataset.platform}<br>
+                    Timezone: ${agent.dataset.timezone}<br>
+                    User Data: ${JSON.stringify(agent.dataset)}<br>
+                `;
             }
         };
 
