@@ -43,7 +43,14 @@ router.get('/wss', async (context) => {
           return;
         }
         const existingFingerprints = fpdb.getAllFingerprints() as FingerPrint[];
-        const closestMatch = Math.max(...existingFingerprints.map(fp => calculateConfidence(JSON.parse(fp.data), json.data)));
+        const closestMatch = Math.max(...existingFingerprints.map((fp) => {
+          try {
+            return calculateConfidence(JSON.parse(fp.data), json.data)
+          } catch (error) {
+            console.error('Error calculating confidence:', error);
+            return 0; // Return 0 if confidence calculation fails
+          }
+        }));
         fpdb.insertFingerPrint({
           hash: hash,
           data: JSON.stringify(json.data)
