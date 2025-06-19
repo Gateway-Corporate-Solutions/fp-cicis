@@ -36,24 +36,52 @@
     </style>
     <script src="/bundle.js"></script>
     <script defer>
-        var Snatch = window["snatch"];
-        var agent = new Snatch;
-        navigator.userAgentData.getHighEntropyValues([
-            "architecture",
-            "model",
-            "platform",
-            "platformVersion",
-            "uaFullVersion",
-            "bitness"
-        ]).then(function(highEntropyValues) {
-            agent.dataset.highEntropyValues = highEntropyValues;
-        });
-        agent.dataset.delete("appName");
-        agent.dataset.delete("appCodeName");
-        agent.dataset.delete("product");
-        agent.dataset.delete("productSub");
-        agent.dataset.delete("permissions");
-        console.log(agent.dataset);
+        function getData() {
+            var dataset = {};
+            dataset.userAgent = navigator.userAgent;
+            dataset.platform = navigator.platform;
+            dataset.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            dataset.language = navigator.language || navigator.userLanguage;
+            dataset.languages = navigator.languages;
+            dataset.cookieEnabled = navigator.cookieEnabled;
+            dataset.doNotTrack = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+            dataset.hardwareConcurrency = navigator.hardwareConcurrency;
+            dataset.deviceMemory = navigator.deviceMemory || "unknown";
+            dataset.plugins = Array.from(navigator.plugins).map(plugin => ({
+                name: plugin.name,
+                version: plugin.version,
+                description: plugin.description
+            }));
+            dataset.mimeTypes = Array.from(navigator.mimeTypes).map(mimeType => ({
+                type: mimeType.type,
+                suffixes: mimeType.suffixes,
+                description: mimeType.description
+            }));
+            dataset.screen = {
+                width: screen.width,
+                height: screen.height,
+                colorDepth: screen.colorDepth,
+                pixelDepth: screen.pixelDepth,
+                orientation: screen.orientation ? {
+                    type: screen.orientation.type,
+                    angle: screen.orientation.angle
+                } : null
+            }
+            navigator.userAgentData.getHighEntropyValues([
+                "architecture",
+                "model",
+                "platform",
+                "platformVersion",
+                "uaFullVersion",
+                "bitness"
+            ]).then(function(highEntropyValues) {
+                dataset.highEntropyValues = highEntropyValues;
+            });
+
+            return dataset;
+        }
+        window.dataset = getData();
+        console.log(window.dataset);
     </script>
     <script defer>
         // Open a websocket connection to FP-Devicer
@@ -84,7 +112,7 @@
                     User Agent: ${agent.dataset.userAgent}<br>
                     Platform: ${agent.dataset.platform}<br>
                     Timezone: ${agent.dataset.timezone}<br>
-                    User Data: ${JSON.stringify(agent.dataset)}<br>
+                    User Data: ${JSON.stringify(window.dataset)}<br>
                 `;
             }
         };
@@ -94,7 +122,7 @@
             // Send a message to the server
             ws.send(JSON.stringify({
                 type: "data",
-                data: agent.dataset
+                data: window.dataset
             }));
         };
     </script>
