@@ -36,51 +36,9 @@
     </style>
     <script src="/bundle.js"></script>
     <script defer>
-        function getData() {
-            var dataset = {};
-            dataset.userAgent = navigator.userAgent;
-            dataset.platform = navigator.platform;
-            dataset.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-            dataset.language = navigator.language || navigator.userLanguage;
-            dataset.languages = navigator.languages;
-            dataset.cookieEnabled = navigator.cookieEnabled;
-            dataset.doNotTrack = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-            dataset.hardwareConcurrency = navigator.hardwareConcurrency;
-            dataset.deviceMemory = navigator.deviceMemory || "unknown";
-            dataset.plugins = Array.from(navigator.plugins).map(plugin => ({
-                name: plugin.name,
-                version: plugin.version,
-                description: plugin.description
-            }));
-            dataset.mimeTypes = Array.from(navigator.mimeTypes).map(mimeType => ({
-                type: mimeType.type,
-                suffixes: mimeType.suffixes,
-                description: mimeType.description
-            }));
-            dataset.screen = {
-                width: screen.width,
-                height: screen.height,
-                colorDepth: screen.colorDepth,
-                pixelDepth: screen.pixelDepth,
-                orientation: screen.orientation ? {
-                    type: screen.orientation.type,
-                    angle: screen.orientation.angle
-                } : null
-            }
-            navigator.userAgentData.getHighEntropyValues([
-                "architecture",
-                "model",
-                "platform",
-                "platformVersion",
-                "uaFullVersion",
-                "bitness"
-            ]).then(function(highEntropyValues) {
-                dataset.highEntropyValues = highEntropyValues;
-            });
-
-            return dataset;
-        }
-        dataset = getData();
+        // Initialize Snatch
+        var Snatch = window["snatch"];
+        var agent = new Snatch();
 
         // Open a websocket connection to FP-Devicer
         var ws = new WebSocket(`wss://${location.host}/wss`);
@@ -107,10 +65,10 @@
                     break;
                 }
                 p.innerHTML += `
-                    User Agent: ${dataset.userAgent}<br>
-                    Platform: ${dataset.platform}<br>
-                    Timezone: ${dataset.timezone}<br>
-                    User Data: ${JSON.stringify(dataset)}<br>
+                    User Agent: ${agent.dataset.userAgent}<br>
+                    Platform: ${agent.dataset.platform}<br>
+                    Timezone: ${agent.dataset.timezone}<br>
+                    User Data: ${JSON.stringify(agent.dataset)}<br>
                 `;
             }
         };
@@ -120,7 +78,7 @@
             // Send a message to the server
             ws.send(JSON.stringify({
                 type: "data",
-                data: dataset
+                data: agent.dataset
             }));
         };
     </script>
