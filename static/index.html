@@ -36,36 +36,36 @@
     </style>
     <script src="/bundle.js"></script>
     <script defer>
-        var dataset = {};
+        window.dataset = {};
         // Collect user agent data
-        dataset.userAgent = navigator.userAgent;
-        dataset.platform = navigator.platform;
-        dataset.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        window.dataset.userAgent = navigator.userAgent;
+        window.dataset.platform = navigator.platform;
+        window.dataset.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         // Collect additional data
-        dataset.language = navigator.language || navigator.userLanguage;
-        dataset.languages = navigator.languages;
-        dataset.screen = {
+        window.dataset.language = navigator.language || navigator.userLanguage;
+        window.dataset.languages = navigator.languages;
+        window.dataset.screen = {
             width: window.screen.width,
             height: window.screen.height,
             colorDepth: window.screen.colorDepth,
             pixelDepth: window.screen.pixelDepth
         }
-        dataset.cookieEnabled = navigator.cookieEnabled;
-        dataset.doNotTrack = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-        dataset.plugins = Array.from(navigator.plugins).map(plugin => ({
+        window.dataset.cookieEnabled = navigator.cookieEnabled;
+        window.dataset.doNotTrack = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+        window.dataset.plugins = Array.from(navigator.plugins).map(plugin => ({
             name: plugin.name,
             description: plugin.description,
             filename: plugin.filename
         }));
-        dataset.mimeTypes = Array.from(navigator.mimeTypes).map(mimeType => ({
+        window.dataset.mimeTypes = Array.from(navigator.mimeTypes).map(mimeType => ({
             type: mimeType.type,
             description: mimeType.description,
             suffixes: mimeType.suffixes
         }));
-        dataset.hardwareConcurrency = navigator.hardwareConcurrency;
-        dataset.deviceMemory = navigator.deviceMemory || "unknown";
+        window.dataset.hardwareConcurrency = navigator.hardwareConcurrency;
+        window.dataset.deviceMemory = navigator.deviceMemory || "unknown";
         // Collect high entropy data
-        dataset.highEntropyValues = await navigator.userAgenData.getHighEntropyValues([
+        window.dataset.highEntropyValues = await navigator.userAgenData.getHighEntropyValues([
             "architecture",
             "model",
             "platformVersion",
@@ -103,7 +103,7 @@
                     User Agent: ${agent.dataset.userAgent}<br>
                     Platform: ${agent.dataset.platform}<br>
                     Timezone: ${agent.dataset.timezone}<br>
-                    User Data: ${JSON.stringify(dataset)}<br>
+                    User Data: ${JSON.stringify(window.dataset)}<br>
                 `;
             }
         };
@@ -113,7 +113,7 @@
             // Send a message to the server
             ws.send(JSON.stringify({
                 type: "data",
-                data: dataset
+                data: window.dataset
             }));
         };
     </script>
