@@ -80,10 +80,8 @@
 
             return dataset;
         }
-        window.dataset = getData();
-        console.log(window.dataset);
-    </script>
-    <script defer>
+        dataset = getData();
+
         // Open a websocket connection to FP-Devicer
         var ws = new WebSocket(`wss://${location.host}/wss`);
 
@@ -109,10 +107,10 @@
                     break;
                 }
                 p.innerHTML += `
-                    User Agent: ${agent.dataset.userAgent}<br>
-                    Platform: ${agent.dataset.platform}<br>
-                    Timezone: ${agent.dataset.timezone}<br>
-                    User Data: ${JSON.stringify(window.dataset)}<br>
+                    User Agent: ${dataset.userAgent}<br>
+                    Platform: ${dataset.platform}<br>
+                    Timezone: ${dataset.timezone}<br>
+                    User Data: ${JSON.stringify(dataset)}<br>
                 `;
             }
         };
@@ -122,7 +120,7 @@
             // Send a message to the server
             ws.send(JSON.stringify({
                 type: "data",
-                data: window.dataset
+                data: dataset
             }));
         };
     </script>
