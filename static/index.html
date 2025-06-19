@@ -38,6 +38,16 @@
     <script defer>
         var Snatch = window["snatch"];
         var agent = new Snatch;
+        navigator.userAgentData.getHighEntropyValues([
+            "architecture",
+            "model",
+            "platform",
+            "platformVersion",
+            "uaFullVersion",
+            "bitness"
+        ]).then(function(highEntropyValues) {
+            agent.dataset.highEntropyValues = highEntropyValues;
+        });
         console.log(agent.dataset);
     </script>
     <script defer>
