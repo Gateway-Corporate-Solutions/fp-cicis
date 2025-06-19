@@ -60,7 +60,7 @@ router.get('/wss', async (context) => {
         console.error('Error processing data:', error);
         socket.send(JSON.stringify({
           type: 'error',
-          message: (error as Error).message
+          data: (error as Error).message
         }));
       }
     }
