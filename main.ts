@@ -26,7 +26,6 @@ router.get('/wss', async (context) => {
     console.log('Message received:', event.data);
     const json = JSON.parse(event.data);
     if (json.type === 'data') {
-      json.data.ip = context.request.ip || 'unknown';
       const hash = getHash(json.data);
       console.log('Hash generated:', hash);
       const existingFP = fpdb.getFingerPrintByHash(hash);
