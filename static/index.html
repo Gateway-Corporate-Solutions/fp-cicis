@@ -37,42 +37,53 @@
     <script src="/bundle.js"></script>
     <script defer>
         window.dataset = {};
-        // Collect user agent data
-        window.dataset.userAgent = navigator.userAgent;
-        window.dataset.platform = navigator.platform;
-        window.dataset.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        // Collect additional data
-        window.dataset.language = navigator.language || navigator.userLanguage;
-        window.dataset.languages = navigator.languages;
-        window.dataset.screen = {
-            width: window.screen.width,
-            height: window.screen.height,
-            colorDepth: window.screen.colorDepth,
-            pixelDepth: window.screen.pixelDepth
+
+        async function getData() {
+            const dataset = {};
+
+            // Collect user agent data
+            dataset.userAgent = navigator.userAgent;
+            dataset.platform = navigator.platform;
+            dataset.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            // Collect additional data
+            dataset.language = navigator.language || navigator.userLanguage;
+            dataset.languages = navigator.languages;
+            dataset.screen = {
+                width: window.screen.width,
+                height: window.screen.height,
+                colorDepth: window.screen.colorDepth,
+                pixelDepth: window.screen.pixelDepth
+            }
+            dataset.cookieEnabled = navigator.cookieEnabled;
+            dataset.doNotTrack = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+            dataset.plugins = Array.from(navigator.plugins).map(plugin => ({
+                name: plugin.name,
+                description: plugin.description,
+                filename: plugin.filename
+            }));
+            dataset.mimeTypes = Array.from(navigator.mimeTypes).map(mimeType => ({
+                type: mimeType.type,
+                description: mimeType.description,
+                suffixes: mimeType.suffixes
+            }));
+            dataset.hardwareConcurrency = navigator.hardwareConcurrency;
+            dataset.deviceMemory = navigator.deviceMemory || "unknown";
+            // Collect high entropy data
+            dataset.highEntropyValues = await navigator.userAgenData.getHighEntropyValues([
+                "architecture",
+                "model",
+                "platformVersion",
+                "uaFullVersion",
+                "bitness",
+                "fullVersionList"
+            ]);
+
+            return dataset;
         }
-        window.dataset.cookieEnabled = navigator.cookieEnabled;
-        window.dataset.doNotTrack = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
-        window.dataset.plugins = Array.from(navigator.plugins).map(plugin => ({
-            name: plugin.name,
-            description: plugin.description,
-            filename: plugin.filename
-        }));
-        window.dataset.mimeTypes = Array.from(navigator.mimeTypes).map(mimeType => ({
-            type: mimeType.type,
-            description: mimeType.description,
-            suffixes: mimeType.suffixes
-        }));
-        window.dataset.hardwareConcurrency = navigator.hardwareConcurrency;
-        window.dataset.deviceMemory = navigator.deviceMemory || "unknown";
-        // Collect high entropy data
-        window.dataset.highEntropyValues = await navigator.userAgenData.getHighEntropyValues([
-            "architecture",
-            "model",
-            "platformVersion",
-            "uaFullVersion",
-            "bitness",
-            "fullVersionList"
-        ]);
+
+        getData().then((data) => {
+            window.dataset = data;
+        });
     </script>
     <script defer>
         // Open a websocket connection to FP-Devicer
