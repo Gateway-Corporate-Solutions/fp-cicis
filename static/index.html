@@ -71,6 +71,12 @@
                     User Data: ${JSON.stringify(agent.dataset)}<br>
                 `;
             }
+
+            if (message.type === "error") {
+                console.error("Error from FP-Devicer: ", message.data);
+                var p = document.getElementById("fingerprint");
+                p.innerHTML = `Error: ${message.data}`;
+            }
         };
 
         ws.onopen = function() {

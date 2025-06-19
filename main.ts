@@ -26,35 +26,43 @@ router.get('/wss', async (context) => {
     console.log('Message received:', event.data);
     const json = JSON.parse(event.data);
     if (json.type === 'data') {
-      const hash = getHash(json.data);
-      console.log('Hash generated:', hash);
-      const existingFP = fpdb.getFingerPrintByHash(hash);
-      if (existingFP) {
-        console.log('Exact match exists for hash:', hash)
+      try {
+        const hash = getHash(json.data);
+        console.log('Hash generated:', hash);
+        const existingFP = fpdb.getFingerPrintByHash(hash);
+        if (existingFP) {
+          console.log('Exact match exists for hash:', hash)
+          socket.send(JSON.stringify({
+            type: 'fingerprint',
+            data: {
+              hash: hash,
+              exactMatchFound: true,
+              closestMatch: 100 // Assuming 100% confidence for exact match
+            }
+          }));
+          return;
+        }
+        const existingFingerprints = fpdb.getAllFingerprints() as FingerPrint[];
+        const closestMatch = Math.max(...existingFingerprints.map(fp => calculateConfidence(JSON.parse(fp.data), json.data)));
+        fpdb.insertFingerPrint({
+          hash: hash,
+          data: JSON.stringify(json.data)
+        });
         socket.send(JSON.stringify({
           type: 'fingerprint',
           data: {
             hash: hash,
-            exactMatchFound: true,
-            closestMatch: 100 // Assuming 100% confidence for exact match
+            exactMatchFound: false,
+            closestMatch: closestMatch
           }
         }));
-        return;
+      } catch (error) {
+        console.error('Error processing data:', error);
+        socket.send(JSON.stringify({
+          type: 'error',
+          message: (error as Error).message
+        }));
       }
-      const existingFingerprints = fpdb.getAllFingerprints() as FingerPrint[];
-      const closestMatch = Math.max(...existingFingerprints.map(fp => calculateConfidence(JSON.parse(fp.data), json.data)));
-      fpdb.insertFingerPrint({
-        hash: hash,
-        data: JSON.stringify(json.data)
-      });
-      socket.send(JSON.stringify({
-        type: 'fingerprint',
-        data: {
-          hash: hash,
-          exactMatchFound: false,
-          closestMatch: closestMatch
-        }
-      }));
     }
   }
 });
