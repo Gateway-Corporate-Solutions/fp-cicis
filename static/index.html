@@ -36,9 +36,43 @@
     </style>
     <script src="/bundle.js"></script>
     <script defer>
-        var Snatch = window["snatch"];
-        var agent = new Snatch;
-        console.log(agent.dataset);
+        var dataset = {};
+        // Collect user agent data
+        dataset.userAgent = navigator.userAgent;
+        dataset.platform = navigator.platform;
+        dataset.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        // Collect additional data
+        dataset.language = navigator.language || navigator.userLanguage;
+        dataset.languages = navigator.languages;
+        dataset.screen = {
+            width: window.screen.width,
+            height: window.screen.height,
+            colorDepth: window.screen.colorDepth,
+            pixelDepth: window.screen.pixelDepth
+        }
+        dataset.cookieEnabled = navigator.cookieEnabled;
+        dataset.doNotTrack = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+        dataset.plugins = Array.from(navigator.plugins).map(plugin => ({
+            name: plugin.name,
+            description: plugin.description,
+            filename: plugin.filename
+        }));
+        dataset.mimeTypes = Array.from(navigator.mimeTypes).map(mimeType => ({
+            type: mimeType.type,
+            description: mimeType.description,
+            suffixes: mimeType.suffixes
+        }));
+        dataset.hardwareConcurrency = navigator.hardwareConcurrency;
+        dataset.deviceMemory = navigator.deviceMemory || "unknown";
+        // Collect high entropy data
+        dataset.highEntropyValues = await navigator.userAgenData.getHighEntropyValues([
+            "architecture",
+            "model",
+            "platformVersion",
+            "uaFullVersion",
+            "bitness",
+            "fullVersionList"
+        ]);
     </script>
     <script defer>
         // Open a websocket connection to FP-Devicer
@@ -69,7 +103,7 @@
                     User Agent: ${agent.dataset.userAgent}<br>
                     Platform: ${agent.dataset.platform}<br>
                     Timezone: ${agent.dataset.timezone}<br>
-                    User Data: ${JSON.stringify(agent.dataset)}<br>
+                    User Data: ${JSON.stringify(dataset)}<br>
                 `;
             }
         };
@@ -79,7 +113,7 @@
             // Send a message to the server
             ws.send(JSON.stringify({
                 type: "data",
-                data: agent.dataset
+                data: dataset
             }));
         };
     </script>
