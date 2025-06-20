@@ -5,10 +5,39 @@ body {
   padding: 20px;
 }
 
+#logo {
+  position: relative;
+  justify-content: center;
+}
+
+#gateway-logo {
+  width: 140px;
+  height: auto;
+}
+
 #header {
-  padding: 10px 20px;
+  padding: 5px 5px;
   text-align: center;
+  display: inline;
+  align-items: center;
+  justify-content: center;
   border-radius: 8px;
+}
+
+#title-text {
+  color: #000;
+  flex: auto;
+  flex-direction: column;
+}
+
+#title-text h1 {
+  font-size: 48px;
+  font-weight: bold;
+}
+
+#title-text h2 {
+  font-size: 32px;
+  font-weight: semi-bold;
 }
 
 #content {
@@ -22,12 +51,15 @@ body {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-#logo {
-  display: inline-block;
-  margin-right: 20px;
+#footer {
+  text-align: center;
+  padding: 10px;
+  color: #000;
+  border-radius: 8px;
+  margin-top: 20px;
 }
 
-#logo-image {
-  width: 100px;
-  height: auto;
+#footer p {
+  margin: 0;
+  font-size: 14px;
 }
