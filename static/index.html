@@ -4,36 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FP-Cicis Demo</title>
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <meta name="description" content="A simple demo of FP-Cicis, a fingerprinting tool developed by Gateway Corporate Solutions.">
+    <meta name="keywords" content="cicis, fp-cicis, fingerprinting, identification, tracking, middleware, gateway corporate, gateway corporate solutions">
     <meta property="og:locale" content="en_US">
     <meta property="og:title" content="FP-Cicis Demo">
     <meta property="og:description" content="A simple demo of FP-Cicis, a fingerprinting tool developed by Gateway Corporate Solutions.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://cicis.info/">
-    <style>
-        body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f4f4;
-        margin: 0;
-        padding: 20px;
-        }
-
-        #header {
-        padding: 10px 20px;
-        text-align: center;
-        border-radius: 8px;
-        }
-
-        #content {
-        max-width: 80%;
-        margin: auto;
-        background-color: #3b3b3b;
-        color: #ffb570;
-        word-wrap: break-word;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-        }
-    </style>
+    <link rel="stylesheet" href="/styles.css">
     <script src="/bundle.js"></script>
     <script defer>
         // Initialize Snatch
@@ -41,7 +20,12 @@
         var agent = new Snatch();
 
         // Open a websocket connection to FP-Devicer
-        var ws = new WebSocket(`wss://${location.host}/wss`);
+        var ws = null;
+        if (location.protocol === "https:") {
+            ws = new WebSocket(`wss://${location.host}/wss`);
+        } else {
+            ws = new WebSocket(`ws://${location.host}/wss`);
+        }
 
         ws.onmessage = function(event) {
             // Handle incoming messages from the server
@@ -97,8 +81,11 @@
 </head>
 <body>
     <div id="header">
-      <h1>FP-Cicis Demo</h1>
-      <p>This is a simple demo of FP-Cicis.</p>
+        <div id="logo">
+            <img src="/logo.png" alt="FP-Cicis Logo" id="logo-image">
+        </div>
+        <h1>FP-Cicis Demo</h1>
+        <p>This is a simple demo of FP-Cicis.</p>
     </div>
     <div id="content">
         <p id="fingerprint">Fingerprint goes here...</p>

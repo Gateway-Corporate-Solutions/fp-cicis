@@ -7,8 +7,8 @@ const app = new Application();
 const router = new Router();
 const fpdb = new FPDB();
 
-router.get('/', (context) => {
-  const indexBody = Deno.readTextFileSync('./static/index.html');
+router.get('/', async (context) => {
+  const indexBody = await Deno.readTextFile('./static/index.html');
   context.response.body = indexBody;
 });
 
@@ -74,24 +74,17 @@ router.get('/wss', async (context) => {
   }
 });
 
-router.get('/:file', (context) => {
-  const filePath = `./static/${context.params.file}`;
-  try {
-    const fileContent = Deno.readTextFileSync(filePath);
-    context.response.body = fileContent;
-  } catch (error) {
-    if (error instanceof Deno.errors.NotFound) {
-      context.response.status = 404;
-      context.response.body = 'File not found';
-    } else {
-      context.response.status = 500;
-      context.response.body = 'Internal server error';
-    }
-  }
-});
-
 app.use(router.routes());
 app.use(router.allowedMethods());
+
+app.use(async (context, next) => {
+  const root = "./static";
+  try {
+    await context.send({ root });
+  } catch {
+    next();
+  }
+});
 
 app.listen({ port: parseInt(Deno.env.get('PORT') ?? '8000') });
 console.log('Server is running on http://localhost:8000');
