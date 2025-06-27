@@ -6,7 +6,7 @@
   "imports": {
     "oak": "jsr:@oak/oak",
     "devicer": "npm:devicer.js@^1.0.12",
-    "snatch": "npm:snatch.js@^1.1.7",
+    "snatch": "npm:snatch.js@^1.1.8",
     "sqlite": "jsr:@db/sqlite"
   },
   "nodeModulesDir": "auto"
