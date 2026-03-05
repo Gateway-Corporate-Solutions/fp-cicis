@@ -11,3 +11,7 @@ Then start the project:
 ```
 deno task start
 ```
+
+### Demo
+
+A demonstration of this site is publicly available at [cicis.info](https://cicis.info/)
