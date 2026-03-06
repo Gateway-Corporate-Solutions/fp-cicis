@@ -37,7 +37,8 @@ router.get('/wss', async (context) => {
       data: {
         totalFingerprints: fingerprints.length,
         uniqueFingerprints: uniques.length,
-        clusters: clusters.length
+        clusters: clusters.length,
+        averageClusterSize: clusters.length > 0 ? Math.floor((fingerprints.length - uniques.length) / clusters.length) : 0
       }
     }))
   }
