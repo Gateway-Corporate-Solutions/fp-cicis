@@ -75,6 +75,7 @@ router.get('/wss', async (context) => {
           hash: hash,
           data: JSON.stringify(json.data)
         });
+        console.log('Fingerprint inserted into database with hash:', hash);
         socket.send(JSON.stringify({ // Send match info back over socket
           type: 'fingerprint',
           data: {
