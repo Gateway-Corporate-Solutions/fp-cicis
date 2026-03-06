@@ -32,7 +32,7 @@ router.get('/wss', async (context) => {
   const socket = await context.upgrade();
   socket.onopen = () => {
     console.log('WebSocket connection opened');
-    socket.send(JSON.stringify({
+    socket.send(JSON.stringify({ // Send initial analytics on connection
       type: 'analytics',
       data: {
         totalFingerprints: fingerprints.length,
@@ -41,6 +41,17 @@ router.get('/wss', async (context) => {
         averageClusterSize: clusters.length > 0 ? Math.floor((fingerprints.length - uniques.length) / clusters.length) : 0
       }
     }))
+    setInterval(() => {  // And send updated analytics every minute after
+      socket.send(JSON.stringify({
+      type: 'analytics',
+      data: {
+        totalFingerprints: fingerprints.length,
+        uniqueFingerprints: uniques.length,
+        clusters: clusters.length,
+        averageClusterSize: clusters.length > 0 ? Math.floor((fingerprints.length - uniques.length) / clusters.length) : 0
+      }
+    }))
+    }, 60000);
   }
   socket.onmessage = (event) => { // Trigger on socket messages
     console.log('Message received:', event.data);
