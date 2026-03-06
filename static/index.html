@@ -87,6 +87,14 @@
                         User Data: ${JSON.stringify(agent.dataset)}<br>
                     `;
                 }
+
+                if (message.type === "analytics") {
+                    console.log("Analytics received from FP-Devicer: ", message.data);
+                    var p = document.getElementById("analytics");
+                    p.innerHTML = `Total Fingerprints: ${message.data.totalFingerprints}<br>`;
+                    p.innerHTML += `Unique Fingerprints: ${message.data.uniqueFingerprints}<br>`;
+                    p.innerHTML += `Clusters: ${message.data.clusters}<br>`;
+                }
             };
 
             ws.onopen = function() {
@@ -112,8 +120,13 @@
             <h2>This is a simple server running fingerprinting software designed by Gateway Corporate Solutions.</h2>
         </div>
     </div>
-    <div id="content">
+    <div class="content">
+        <h2>Your Device Fingerprint</h2>
         <p id="fingerprint">Fingerprint goes here...</p>
+    </div>
+    <div class="content">
+        <h2>Server Analytics</h2>
+        <p id="analytics">Analytics go here...</p>
     </div>
     <div id="footer">
         <p>© 2025 Gateway Corporate Solutions. All rights reserved.</p>

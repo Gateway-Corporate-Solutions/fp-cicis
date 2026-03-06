@@ -40,15 +40,21 @@ body {
   font-weight: semi-bold;
 }
 
-#content {
+.content {
   max-width: 80%;
-  margin: auto;
+  margin: 20px auto;
   background-color: #3b3b3b;
   color: #ffb570;
   word-wrap: break-word;
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.content h2 {
+  justify-content: center;
+  text-align: center;
+  margin-top: 0;
 }
 
 #footer {

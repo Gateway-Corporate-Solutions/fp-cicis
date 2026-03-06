@@ -8,6 +8,16 @@ const app = new Application();
 const router = new Router();
 const fpdb = new FPDB();
 
+const fingerprints = fpdb.getAllFingerprints();
+console.log(`Current fingerprints in database: ${fingerprints.length}`);
+let [clusters, uniques] = clusterFingerprints(fpdb, 0.1, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
+console.log(`Current clusters: ${clusters.length}`);
+clusters.forEach((cluster, index) => { // Log cluster details
+  console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
+  console.log(`Sample fingerprint from cluster ${index + 1}:`, cluster[0]); // Log a sample fingerprint from each cluster
+});
+console.log(`Unique fingerprints: ${uniques.length}`); // Log number of unique fingerprints that don't belong to any cluster
+
 router.get('/', async (context) => {
   const indexBody = await Deno.readTextFile('./static/index.html');
   context.response.body = indexBody;
@@ -22,6 +32,14 @@ router.get('/wss', async (context) => {
   const socket = await context.upgrade();
   socket.onopen = () => {
     console.log('WebSocket connection opened');
+    socket.send(JSON.stringify({
+      type: 'analytics',
+      data: {
+        totalFingerprints: fingerprints.length,
+        uniqueFingerprints: uniques.length,
+        clusters: clusters.length
+      }
+    }))
   }
   socket.onmessage = (event) => { // Trigger on socket messages
     console.log('Message received:', event.data);
@@ -93,7 +111,7 @@ console.log('Server is running on http://localhost:8000');
 setInterval(() => {
   const fingerprints = fpdb.getAllFingerprints();
   console.log(`Current fingerprints in database: ${fingerprints.length}`);
-  const [clusters, uniques] = clusterFingerprints(fpdb, 0.1, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
+  [clusters, uniques] = clusterFingerprints(fpdb, 0.1, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
   console.log(`Current clusters: ${clusters.length}`);
   clusters.forEach((cluster, index) => { // Log cluster details
     console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
