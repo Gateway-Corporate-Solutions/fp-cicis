@@ -2,6 +2,7 @@ import { Application, Router } from 'oak';
 import { getHash } from 'devicer/src/libs/tlsh.js';
 import { calculateConfidence } from "devicer";
 import { FPDB, FingerPrint } from "./libs/db.ts";
+import { clusterFingerprints } from "./libs/clustering.ts";
 
 const app = new Application();
 const router = new Router();
@@ -88,3 +89,14 @@ app.use(async (context, next) => {
 
 app.listen({ port: parseInt(Deno.env.get('PORT') ?? '8000') });
 console.log('Server is running on http://localhost:8000');
+
+setInterval(() => {
+  const fingerprints = fpdb.getAllFingerprints();
+  console.log(`Current fingerprints in database: ${fingerprints.length}`);
+  const clusters = clusterFingerprints(fpdb, 0.1, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
+  console.log(`Current clusters: ${clusters.length}`);
+  clusters.forEach((cluster, index) => { // Log cluster details
+    console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
+    console.log(`Sample fingerprint from cluster ${index + 1}:`, cluster[0]); // Log a sample fingerprint from each cluster
+  });
+}, 600000); // Run and log analytics every 10 minutes
