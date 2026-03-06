@@ -93,10 +93,11 @@ console.log('Server is running on http://localhost:8000');
 setInterval(() => {
   const fingerprints = fpdb.getAllFingerprints();
   console.log(`Current fingerprints in database: ${fingerprints.length}`);
-  const clusters = clusterFingerprints(fpdb, 0.1, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
+  const [clusters, uniques] = clusterFingerprints(fpdb, 0.1, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
   console.log(`Current clusters: ${clusters.length}`);
   clusters.forEach((cluster, index) => { // Log cluster details
     console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
     console.log(`Sample fingerprint from cluster ${index + 1}:`, cluster[0]); // Log a sample fingerprint from each cluster
   });
+  console.log(`Unique fingerprints: ${uniques.length}`); // Log number of unique fingerprints that don't belong to any cluster
 }, 600000); // Run and log analytics every 10 minutes

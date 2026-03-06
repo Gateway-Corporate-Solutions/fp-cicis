@@ -1,12 +1,12 @@
 import { FPDB, FingerPrint } from './db.ts';
 import { calculateConfidence, FPDataSet } from "devicer";
 
-export function clusterFingerprints(fpdb: FPDB, eps: number, minPts: number): FingerPrint[][] {
+export function clusterFingerprints(fpdb: FPDB, eps: number, minPts: number): [FingerPrint[][], FingerPrint[]] {
     const fingerprints = fpdb.getAllFingerprints();
     return dbscan(fingerprints, eps, minPts);
 }
 
-export function dbscan(data: FingerPrint[], eps: number, minPts: number): FingerPrint[][] {
+export function dbscan(data: FingerPrint[], eps: number, minPts: number): [FingerPrint[][], FingerPrint[]] {
     const clusterAssignments: number[] = new Array(data.length).fill(-1);
     let clusterId = 0;
     const parsedData = data.map(fp => JSON.parse(fp.data) as FPDataSet);
@@ -55,7 +55,14 @@ export function dbscan(data: FingerPrint[], eps: number, minPts: number): Finger
         }
     }
 
-    return clusters;
+    const uniques: FingerPrint[] = [];
+    for (let i = 0; i < data.length; i++) {
+        if (clusterAssignments[i] === -1) {
+            uniques.push(data[i]);
+        }
+    }
+
+    return [clusters, uniques];
 }
 
 function distance(fp1: FPDataSet, fp2: FPDataSet): number {
