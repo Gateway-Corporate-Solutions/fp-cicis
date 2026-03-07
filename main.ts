@@ -8,7 +8,7 @@ const app = new Application();
 const router = new Router();
 const fpdb = new FPDB();
 
-const fingerprints = fpdb.getAllFingerprints();
+let fingerprints = fpdb.getAllFingerprints();
 console.log(`Current fingerprints in database: ${fingerprints.length}`);
 let [clusters, uniques] = clusterFingerprints(fpdb, 0.2, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
 console.log(`Current clusters: ${clusters.length}`);
@@ -122,7 +122,7 @@ app.listen({ port: parseInt(Deno.env.get('PORT') ?? '8000') });
 console.log('Server is running on http://localhost:8000');
 
 setInterval(() => {
-  const fingerprints = fpdb.getAllFingerprints();
+  fingerprints = fpdb.getAllFingerprints();
   console.log(`Current fingerprints in database: ${fingerprints.length}`);
   [clusters, uniques] = clusterFingerprints(fpdb, 0.2, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
   console.log(`Current clusters: ${clusters.length}`);
