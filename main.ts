@@ -1,5 +1,5 @@
 import { Application, Router } from 'oak';
-import { getHash } from 'devicer/dist/libs/tlsh.js';
+import { getHash } from "devicer";
 import { calculateConfidence } from "devicer";
 import { FPDB, FingerPrint } from "./libs/db.ts";
 import { clusterFingerprints } from "./libs/clustering.ts";
