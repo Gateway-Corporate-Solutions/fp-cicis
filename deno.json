@@ -5,7 +5,7 @@
   },
   "imports": {
     "oak": "jsr:@oak/oak",
-    "devicer": "npm:devicer.js@^1.1.0",
+    "devicer": "npm:devicer.js@^1.2.1",
     "snatch": "npm:snatch.js@^1.1.8",
     "sqlite": "jsr:@db/sqlite"
   },
