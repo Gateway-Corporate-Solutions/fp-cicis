@@ -10,7 +10,7 @@ const fpdb = new FPDB();
 
 const fingerprints = fpdb.getAllFingerprints();
 console.log(`Current fingerprints in database: ${fingerprints.length}`);
-let [clusters, uniques] = clusterFingerprints(fpdb, 0.1, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
+let [clusters, uniques] = clusterFingerprints(fpdb, 0.2, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
 console.log(`Current clusters: ${clusters.length}`);
 clusters.forEach((cluster, index) => { // Log cluster details
   console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
@@ -124,7 +124,7 @@ console.log('Server is running on http://localhost:8000');
 setInterval(() => {
   const fingerprints = fpdb.getAllFingerprints();
   console.log(`Current fingerprints in database: ${fingerprints.length}`);
-  [clusters, uniques] = clusterFingerprints(fpdb, 0.1, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
+  [clusters, uniques] = clusterFingerprints(fpdb, 0.2, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
   console.log(`Current clusters: ${clusters.length}`);
   clusters.forEach((cluster, index) => { // Log cluster details
     console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
