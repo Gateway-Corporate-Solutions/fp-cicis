@@ -78,7 +78,7 @@ router.get('/wss', async (context) => {
         const fingerprintCandidates = await adapter.findCandidates(json.data, 40, 50); // Get up to 50 fingerprint candidates from database
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
-				deviceManager.identify(json.data, { ip: context.request.ip }).then(result => { /* Identify device and save fingerprint to database */});
+				deviceManager.identify(json.data, { ip: context.request.ip }).then(_result => { /* Identify device and save fingerprint to database */});
 
         console.log('Fingerprint inserted into database with hash:', hash);
 				socket.send(JSON.stringify({ // Send match info back over socket
