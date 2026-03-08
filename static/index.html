@@ -58,11 +58,11 @@
                     case message.data.closestMatch == 100:
                         p.innerHTML += `Closest Match: ${message.data.closestMatch} (Exact Match)<br>`;
                         break;
-                    case message.data.closestMatch > 90:
+                    case message.data.closestMatch > 80:
                         p.innerHTML += `Closest Match: ${message.data.closestMatch} (Very Close Match)<br>`;
                         break;
-                    case message.data.closestMatch > 50:
-                        p.innerHTML += `Closest Match: ${message.data.closestMatch} (Partial Match)<br>`;
+                    case message.data.closestMatch > 60:
+                        p.innerHTML += `Closest Match: ${message.data.closestMatch} (Close Match)<br>`;
                         break;
                     default:
                         p.innerHTML += `Closest Match: ${message.data.closestMatch} (No Match)<br>`;
