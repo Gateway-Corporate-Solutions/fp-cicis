@@ -1,15 +1,15 @@
-import { FPDB, FingerPrint } from './db.ts';
 import { calculateConfidence, FPDataSet } from "devicer";
+import { StorageAdapter, StoredFingerprint } from "devicer";
 
-export function clusterFingerprints(fpdb: FPDB, eps: number, minPts: number): [FingerPrint[][], FingerPrint[]] {
-    const fingerprints = fpdb.getAllFingerprints();
+export async function clusterFingerprints(adapter: StorageAdapter, eps: number, minPts: number): Promise<[StoredFingerprint[][], StoredFingerprint[]]> {
+    const fingerprints = await adapter.getAllFingerprints();
     return dbscan(fingerprints, eps, minPts);
 }
 
-export function dbscan(data: FingerPrint[], eps: number, minPts: number): [FingerPrint[][], FingerPrint[]] {
+export function dbscan(data: StoredFingerprint[], eps: number, minPts: number): [StoredFingerprint[][], StoredFingerprint[]] {
     const clusterAssignments: number[] = new Array(data.length).fill(-1);
     let clusterId = 0;
-    const parsedData = data.map(fp => JSON.parse(fp.data) as FPDataSet);
+    const parsedData = data.map(fp => fp.fingerprint);
     
     function regionQuery(pointIndex: number): number[] {
         const neighbors: number[] = [];
@@ -47,7 +47,7 @@ export function dbscan(data: FingerPrint[], eps: number, minPts: number): [Finge
         }
     }
 
-    const clusters: FingerPrint[][] = Array.from({ length: clusterId }, () => []);
+    const clusters: StoredFingerprint[][] = Array.from({ length: clusterId }, () => []);
     for (let i = 0; i < data.length; i++) {
         const assignment = clusterAssignments[i];
         if (assignment >= 0) {
@@ -55,7 +55,7 @@ export function dbscan(data: FingerPrint[], eps: number, minPts: number): [Finge
         }
     }
 
-    const uniques: FingerPrint[] = [];
+    const uniques: StoredFingerprint[] = [];
     for (let i = 0; i < data.length; i++) {
         if (clusterAssignments[i] === -1) {
             uniques.push(data[i]);
