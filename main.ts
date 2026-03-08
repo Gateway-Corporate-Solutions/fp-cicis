@@ -8,15 +8,9 @@ const app = new Application();
 const router = new Router();
 const fpdb = new FPDB();
 
-let fingerprints = fpdb.getAllFingerprints();
-console.log(`Current fingerprints in database: ${fingerprints.length}`);
-let [clusters, uniques] = clusterFingerprints(fpdb, 0.2, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
-console.log(`Current clusters: ${clusters.length}`);
-clusters.forEach((cluster, index) => { // Log cluster details
-  console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
-  console.log(`Sample fingerprint from cluster ${index + 1}:`, cluster[0]); // Log a sample fingerprint from each cluster
-});
-console.log(`Unique fingerprints: ${uniques.length}`); // Log number of unique fingerprints that don't belong to any cluster
+let fingerprints: FingerPrint[] = [];
+let clusters: FingerPrint[][] = [];
+let uniques: FingerPrint[] = [];
 
 router.get('/', async (context) => {
   const indexBody = await Deno.readTextFile('./static/index.html');
@@ -120,6 +114,16 @@ app.use(async (context, next) => {
 
 app.listen({ port: parseInt(Deno.env.get('PORT') ?? '8000') });
 console.log('Server is running on http://localhost:8000');
+
+fingerprints = fpdb.getAllFingerprints();
+console.log(`Current fingerprints in database: ${fingerprints.length}`);
+[clusters, uniques] = clusterFingerprints(fpdb, 0.2, 2); // Cluster fingerprints every 10 minutes with eps=0.1 and minPts=2
+console.log(`Current clusters: ${clusters.length}`);
+clusters.forEach((cluster, index) => { // Log cluster details
+  console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
+  console.log(`Sample fingerprint from cluster ${index + 1}:`, cluster[0]); // Log a sample fingerprint from each cluster
+});
+console.log(`Unique fingerprints: ${uniques.length}`); // Log number of unique fingerprints that don't belong to any cluster
 
 setInterval(() => {
   fingerprints = fpdb.getAllFingerprints();
