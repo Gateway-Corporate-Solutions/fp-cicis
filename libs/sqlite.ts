@@ -47,10 +47,24 @@ export function createSqliteAdapter(dbPath: string): StorageAdapter {
 				`SELECT * FROM fingerprints WHERE 
 					JSON_EXTRACT(data, '$.deviceMemory') = ? OR 
 					JSON_EXTRACT(data, '$.hardwareConcurrency') = ? OR 
-					JSON_EXTRACT(data, '$.platform') = ?`
+					JSON_EXTRACT(data, '$.platform') = ?
+				ORDER BY timestamp DESC`
 			).all(query.deviceMemory, query.hardwareConcurrency, query.platform);
+
+			const prelim = rows.filter(row => {
+				const fp = JSON.parse(row.data);
+				return (query.canvas && fp?.canvas === query.canvas) ||
+					(query.webgl && fp?.webgl === query.webgl);
+				// Add more pre-filtering conditions as needed based on your fingerprint structure
+				// The goal is to reduce the number of candidates before doing the full confidence calculation
+				// while still keeping potential matches. This is a balance between recall and performance.
+				// In production, you might want to implement a more sophisticated pre-filtering strategy.
+			});
+
+			const pool = prelim.length > 0 ? prelim : rows; // Fall back to full set if no biometric signals matched
+
 			const candidates: Array<DeviceMatch & { confidence: number }> = [];
-			for (const row of rows) {
+			for (const row of pool) {
 				const confidence = calculateConfidence(query, JSON.parse(row.data));
 				if (confidence >= minConfidence) {
 					candidates.push({
