@@ -12,7 +12,8 @@ const router = new Router();
 
 const adapter = createSqliteAdapter('./fp.db');
 await adapter.init(); // Initialize the SQLite adapter (creates table if not exists)
-const deviceManager = new DeviceManager(adapter, { matchThreshold: 75, candidateMinScore: 40 }); // Initialize DeviceManager with SQLite adapter
+const confidenceThreshold = 75; // Set confidence threshold for device matching
+const deviceManager = new DeviceManager(adapter, { matchThreshold: confidenceThreshold, candidateMinScore: 40 }); // Initialize DeviceManager with SQLite adapter
 
 let fingerprints: StoredFingerprint[] = [];
 let clusters: StoredFingerprint[][] = [];
@@ -117,7 +118,7 @@ console.log('Server is running on http://localhost:8000');
 
 fingerprints = await adapter.getAllFingerprints();
 console.log(`Current fingerprints in database: ${fingerprints.length}`);
-[clusters, uniques] = await clusterFingerprints(adapter, 0.25, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
+[clusters, uniques] = await clusterFingerprints(adapter, 1 - confidenceThreshold / 100, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
 console.log(`Current clusters: ${clusters.length}`);
 clusters.forEach((cluster, index) => { // Log cluster details
   console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
@@ -128,7 +129,7 @@ console.log(`Unique fingerprints: ${uniques.length}`); // Log number of unique f
 setInterval(async () => {
   fingerprints = await adapter.getAllFingerprints();
   console.log(`Current fingerprints in database: ${fingerprints.length}`);
-  [clusters, uniques] = await clusterFingerprints(adapter, 0.25, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
+  [clusters, uniques] = await clusterFingerprints(adapter, 1 - confidenceThreshold / 100, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
   console.log(`Current clusters: ${clusters.length}`);
   clusters.forEach((cluster, index) => { // Log cluster details
     console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
