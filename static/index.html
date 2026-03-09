@@ -53,26 +53,26 @@
                 if (message.type === "fingerprint") {
                     console.log("Fingerprint received from FP-Devicer: ", message.data);
                     var p = document.getElementById("fingerprint");
-                    p.innerHTML = `Fingerprint Hash: ${message.data.hash}<br>`
+                    p.innerHTML = `<b>Fingerprint Hash:</b> ${message.data.hash}<br>`
                     switch(true) {
                     case message.data.closestMatch == 100:
-                        p.innerHTML += `Closest Match: ${message.data.closestMatch} (Exact Match)<br>`;
+                        p.innerHTML += `<b>Closest Match:</b> ${message.data.closestMatch} (Exact Match)<br>`;
                         break;
                     case message.data.closestMatch > 80:
-                        p.innerHTML += `Closest Match: ${message.data.closestMatch} (Very Close Match)<br>`;
+                        p.innerHTML += `<b>Closest Match:</b> ${message.data.closestMatch} (Very Close Match)<br>`;
                         break;
                     case message.data.closestMatch > 60:
-                        p.innerHTML += `Closest Match: ${message.data.closestMatch} (Close Match)<br>`;
+                        p.innerHTML += `<b>Closest Match:</b> ${message.data.closestMatch} (Close Match)<br>`;
                         break;
                     default:
-                        p.innerHTML += `Closest Match: ${message.data.closestMatch} (No Match)<br>`;
+                        p.innerHTML += `<b>Closest Match:</b> ${message.data.closestMatch} (No Match)<br>`;
                         break;
                     }
                     p.innerHTML += `
-                        User Agent: ${agent.dataset.userAgent}<br>
-                        Platform: ${agent.dataset.platform}<br>
-                        Timezone: ${agent.dataset.timezone}<br>
-                        User Data: ${JSON.stringify(agent.dataset)}<br>
+                        <b>User Agent:</b> ${agent.dataset.userAgent}<br>
+                        <b>Platform:</b> ${agent.dataset.platform}<br>
+                        <b>Timezone:</b> ${agent.dataset.timezone}<br>
+                        <b>User Data:</b> ${JSON.stringify(agent.dataset)}<br>
                     `;
                 }
 
@@ -81,20 +81,20 @@
                     var p = document.getElementById("fingerprint");
                     p.innerHTML = `Error: ${message.data}<br>`;
                     p.innerHTML += `
-                        User Agent: ${agent.dataset.userAgent}<br>
-                        Platform: ${agent.dataset.platform}<br>
-                        Timezone: ${agent.dataset.timezone}<br>
-                        User Data: ${JSON.stringify(agent.dataset)}<br>
+                        <b>User Agent:</b> ${agent.dataset.userAgent}<br>
+                        <b>Platform:</b> ${agent.dataset.platform}<br>
+                        <b>Timezone:</b> ${agent.dataset.timezone}<br>
+                        <b>User Data:</b> ${JSON.stringify(agent.dataset)}<br>
                     `;
                 }
 
                 if (message.type === "analytics") {
                     console.log("Analytics received from FP-Devicer: ", message.data);
                     var p = document.getElementById("analytics");
-                    p.innerHTML = `Total Fingerprints: ${message.data.totalFingerprints}<br>`;
-                    p.innerHTML += `Unique Fingerprints: ${message.data.uniqueFingerprints}<br>`;
-                    p.innerHTML += `Fingerprint Clusters: ${message.data.clusters}<br>`;
-                    p.innerHTML += `Average Cluster Size: ${message.data.averageClusterSize}<br>`;
+                    p.innerHTML = `<b>Total Fingerprints:</b> ${message.data.totalFingerprints}<br>`;
+                    p.innerHTML += `<b>Unique Fingerprints:</b> ${message.data.uniqueFingerprints}<br>`;
+                    p.innerHTML += `<b>Fingerprint Clusters:</b> ${message.data.clusters}<br>`;
+                    p.innerHTML += `<b>Average Cluster Size:</b> ${message.data.averageClusterSize}<br>`;
                 }
             };
 
