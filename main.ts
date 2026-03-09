@@ -12,7 +12,7 @@ const router = new Router();
 
 const adapter = createSqliteAdapter('./fp.db');
 await adapter.init(); // Initialize the SQLite adapter (creates table if not exists)
-const deviceManager = new DeviceManager(adapter, { matchThreshold: 60, candidateMinScore: 40 }); // Initialize DeviceManager with SQLite adapter
+const deviceManager = new DeviceManager(adapter, { matchThreshold: 75, candidateMinScore: 40 }); // Initialize DeviceManager with SQLite adapter
 
 let fingerprints: StoredFingerprint[] = [];
 let clusters: StoredFingerprint[][] = [];
@@ -75,7 +75,7 @@ router.get('/wss', async (context) => {
           return;
         }
 
-        const fingerprintCandidates = await adapter.findCandidates(json.data, 40, 50); // Get up to 50 fingerprint candidates from database
+        const fingerprintCandidates = await adapter.findCandidates(json.data, 50, 50); // Get up to 50 fingerprint candidates from database
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
 				deviceManager.identify(json.data, { ip: context.request.ip }).then(_result => { /* Identify device and save fingerprint to database */});
@@ -117,7 +117,7 @@ console.log('Server is running on http://localhost:8000');
 
 fingerprints = await adapter.getAllFingerprints();
 console.log(`Current fingerprints in database: ${fingerprints.length}`);
-[clusters, uniques] = await clusterFingerprints(adapter, 0.4, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
+[clusters, uniques] = await clusterFingerprints(adapter, 0.25, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
 console.log(`Current clusters: ${clusters.length}`);
 clusters.forEach((cluster, index) => { // Log cluster details
   console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
@@ -128,7 +128,7 @@ console.log(`Unique fingerprints: ${uniques.length}`); // Log number of unique f
 setInterval(async () => {
   fingerprints = await adapter.getAllFingerprints();
   console.log(`Current fingerprints in database: ${fingerprints.length}`);
-  [clusters, uniques] = await clusterFingerprints(adapter, 0.4, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
+  [clusters, uniques] = await clusterFingerprints(adapter, 0.25, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
   console.log(`Current clusters: ${clusters.length}`);
   clusters.forEach((cluster, index) => { // Log cluster details
     console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
