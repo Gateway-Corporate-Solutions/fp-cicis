@@ -117,7 +117,7 @@ console.log('Server is running on http://localhost:8000');
 
 fingerprints = await adapter.getAllFingerprints();
 console.log(`Current fingerprints in database: ${fingerprints.length}`);
-[clusters, uniques] = await clusterFingerprints(adapter, 0.4, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
+[clusters, uniques] = await clusterFingerprints(adapter, 0.25, 2); // Cluster fingerprints every 10 minutes with eps=0.25 and minPts=2
 console.log(`Current clusters: ${clusters.length}`);
 clusters.forEach((cluster, index) => { // Log cluster details
   console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
@@ -128,7 +128,7 @@ console.log(`Unique fingerprints: ${uniques.length}`); // Log number of unique f
 setInterval(async () => {
   fingerprints = await adapter.getAllFingerprints();
   console.log(`Current fingerprints in database: ${fingerprints.length}`);
-  [clusters, uniques] = await clusterFingerprints(adapter, 0.4, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
+  [clusters, uniques] = await clusterFingerprints(adapter, 0.25, 2); // Cluster fingerprints every 10 minutes with eps=0.25 and minPts=2
   console.log(`Current clusters: ${clusters.length}`);
   clusters.forEach((cluster, index) => { // Log cluster details
     console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
