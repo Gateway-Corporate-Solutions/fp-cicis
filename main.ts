@@ -12,7 +12,7 @@ const router = new Router();
 
 const adapter = createSqliteAdapter('./fp.db');
 await adapter.init(); // Initialize the SQLite adapter (creates table if not exists)
-const confidenceThreshold = 75; // Set confidence threshold for device matching
+const confidenceThreshold = 80; // Set confidence threshold for device matching
 const deviceManager = new DeviceManager(adapter, { matchThreshold: confidenceThreshold, candidateMinScore: 40 }); // Initialize DeviceManager with SQLite adapter
 
 let fingerprints: StoredFingerprint[] = [];
