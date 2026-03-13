@@ -4,8 +4,12 @@ import {
 	DeviceManager,
 	StoredFingerprint
 } from "devicer";
+import { IpManager } from "ip-devicer";
+import { TlsManager } from "tls-devicer";
 import { createSqliteAdapter } from "./libs/sqlite.ts";
 import { clusterFingerprints } from "./libs/clustering.ts";
+
+const licenseKey = Deno.env.get('DEVICER_LICENSE_KEY');
 
 const app = new Application();
 const router = new Router();
@@ -13,7 +17,24 @@ const router = new Router();
 const adapter = createSqliteAdapter('./fp.db');
 await adapter.init(); // Initialize the SQLite adapter (creates table if not exists)
 const confidenceThreshold = 80; // Set confidence threshold for device matching
-const deviceManager = new DeviceManager(adapter, { matchThreshold: confidenceThreshold, candidateMinScore: 40 }); // Initialize DeviceManager with SQLite adapter
+
+const deviceManager = new DeviceManager(adapter, {  // Initialize DeviceManager with SQLite adapter
+	matchThreshold: confidenceThreshold,
+	candidateMinScore: 40,
+	logger: console
+});
+const ipManager = new IpManager({
+	licenseKey: licenseKey,
+	maxmindPath: "./data/GeoLite2-City.mmdb",
+	asnPath: "./data/GeoLite2-ASN.mmdb",
+	enableReputation: true,
+});
+const tlsManager = new TlsManager({
+	licenseKey: licenseKey,
+});
+
+ipManager.registerWith(deviceManager);
+tlsManager.registerWith(deviceManager);
 
 let fingerprints: StoredFingerprint[] = [];
 let clusters: StoredFingerprint[][] = [];
@@ -79,7 +100,7 @@ router.get('/wss', async (context) => {
         const fingerprintCandidates = await adapter.findCandidates(json.data, 50, 50); // Get up to 50 fingerprint candidates from database
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
-				deviceManager.identify(json.data, { ip: context.request.ip }).then(_result => { /* Identify device and save fingerprint to database */});
+				await deviceManager.identify(json.data, { ip: context.request.ip }); // Identify device and insert fingerprint into database
 
         console.log('Fingerprint inserted into database with hash:', hash);
 				socket.send(JSON.stringify({ // Send match info back over socket
