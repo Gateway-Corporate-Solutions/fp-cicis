@@ -5,7 +5,7 @@ import {
 	StoredFingerprint
 } from "devicer";
 import { IpManager } from "ip-devicer";
-import { TlsManager } from "tls-devicer";
+import { TlsManager, buildTlsProfile } from "tls-devicer";
 import { createSqliteAdapter } from "./libs/sqlite.ts";
 import { clusterFingerprints } from "./libs/clustering.ts";
 
@@ -51,7 +51,27 @@ router.get('/wss', async (context) => {
     context.response.body = 'Upgrade Required';
     return;
   }
+  const requestHeaders = Object.fromEntries(context.request.headers.entries());
+  const tlsHeaderLog = {
+    'x-ja4': requestHeaders['x-ja4'] ?? null,
+    'x-tls-ja4': requestHeaders['x-tls-ja4'] ?? null,
+    'cf-ja4': requestHeaders['cf-ja4'] ?? null,
+    'x-ja3': requestHeaders['x-ja3'] ?? null,
+    'cf-ja3-fingerprint': requestHeaders['cf-ja3-fingerprint'] ?? null,
+    'x-tls-ciphers': requestHeaders['x-tls-ciphers'] ?? null,
+    'x-tls-extensions': requestHeaders['x-tls-extensions'] ?? null,
+    'x-http2-settings': requestHeaders['x-http2-settings'] ?? null,
+  };
+  const tlsProfile = buildTlsProfile(requestHeaders);
   const realIp = context.request.headers.get('X-Real-IP') ?? context.request.ip;
+
+  if (Object.values(tlsHeaderLog).some((value) => value !== null)) {
+    console.log('TLS proxy headers received for websocket upgrade:', tlsHeaderLog);
+    console.log('Derived TLS profile for websocket upgrade:', tlsProfile);
+  } else {
+    console.log('No TLS proxy headers received for websocket upgrade');
+  }
+
   const socket = await context.upgrade();
   socket.onopen = () => {
     console.log('WebSocket connection opened');
@@ -88,7 +108,7 @@ router.get('/wss', async (context) => {
         const exactMatchFound = fingerprintCandidates.some((fp) => fp.confidence >= 100);
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
-				await deviceManager.identify(json.data, { ip: realIp }); // Identify device and insert fingerprint into database
+        await deviceManager.identify(json.data, { ip: realIp, tlsProfile }); // Identify device and insert fingerprint into database
 
 				if (exactMatchFound) {
 					console.log('Exact match found for fingerprint with hash:', hash);
