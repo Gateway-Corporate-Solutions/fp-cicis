@@ -108,7 +108,31 @@ router.get('/wss', async (context) => {
         const exactMatchFound = fingerprintCandidates.some((fp) => fp.confidence >= 100);
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
-        await deviceManager.identify(json.data, { ip: realIp, tlsProfile }); // Identify device and insert fingerprint into database
+        const identifyResult = await deviceManager.identify(json.data, { ip: realIp, tlsProfile }) as unknown as Record<string, unknown>; // Identify device and insert fingerprint into database
+        const tlsConsistency = identifyResult.tlsConsistency as Record<string, unknown> | undefined;
+
+        if (tlsConsistency) {
+          console.log('TLS consistency result:', {
+            deviceId: identifyResult.deviceId,
+            tlsProfileJa4: tlsProfile.ja4 ?? null,
+            isNewDevice: tlsConsistency.isNewDevice,
+            ja4Match: tlsConsistency.ja4Match,
+            consistencyScore: tlsConsistency.consistencyScore,
+            factors: tlsConsistency.factors,
+          });
+
+          if (tlsConsistency.ja4Match === null) {
+            if (tlsConsistency.isNewDevice === true) {
+              console.log('ja4Match is null because this is the first stored TLS snapshot for the resolved device');
+            } else if (!tlsProfile.ja4) {
+              console.log('ja4Match is null because no JA4 value was present in the incoming TLS profile');
+            } else {
+              console.log('ja4Match is null because JA4 was not available on one side of the comparison');
+            }
+          }
+        } else {
+          console.log('No tlsConsistency was attached to the identify result');
+        }
 
 				if (exactMatchFound) {
 					console.log('Exact match found for fingerprint with hash:', hash);
