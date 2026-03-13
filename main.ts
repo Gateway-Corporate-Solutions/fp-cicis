@@ -51,6 +51,7 @@ router.get('/wss', async (context) => {
     context.response.body = 'Upgrade Required';
     return;
   }
+  const realIp = context.request.headers.get('X-Real-IP') ?? context.request.ip;
   const socket = await context.upgrade();
   socket.onopen = () => {
     console.log('WebSocket connection opened');
@@ -87,7 +88,7 @@ router.get('/wss', async (context) => {
         const exactMatchFound = fingerprintCandidates.some((fp) => fp.confidence >= 100);
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
-				await deviceManager.identify(json.data, { ip: context.request.ip }); // Identify device and insert fingerprint into database
+				await deviceManager.identify(json.data, { ip: realIp }); // Identify device and insert fingerprint into database
 
 				if (exactMatchFound) {
 					console.log('Exact match found for fingerprint with hash:', hash);
