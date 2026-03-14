@@ -1,11 +1,5 @@
 import { Application, Router } from 'oak';
-import { 
-	getHash,
-	DeviceManager,
-	StoredFingerprint
-} from "devicer";
-import { IpManager } from "ip-devicer";
-import { TlsManager, buildTlsProfile } from "tls-devicer";
+import { devicer, ipDevicer, tlsDevicer } from "devicer-suite";
 import { createSqliteAdapter } from "./libs/sqlite.ts";
 import { clusterFingerprints } from "./libs/clustering.ts";
 
@@ -18,27 +12,27 @@ const adapter = createSqliteAdapter('./fp.db');
 await adapter.init(); // Initialize the SQLite adapter (creates table if not exists)
 const confidenceThreshold = 80; // Set confidence threshold for device matching
 
-const deviceManager = new DeviceManager(adapter, {  // Initialize DeviceManager with SQLite adapter
+const deviceManager = new devicer.DeviceManager(adapter, {  // Initialize DeviceManager with SQLite adapter
 	matchThreshold: confidenceThreshold,
 	candidateMinScore: 40,
 	logger: console
 });
-const ipManager = new IpManager({
+const ipManager = new ipDevicer.IpManager({
 	licenseKey: licenseKey,
 	maxmindPath: "./data/GeoLite2-City.mmdb",
 	asnPath: "./data/GeoLite2-ASN.mmdb",
 	enableReputation: true,
 });
-const tlsManager = new TlsManager({
+const tlsManager = new tlsDevicer.TlsManager({
 	licenseKey: licenseKey,
 });
 
 ipManager.registerWith(deviceManager);
 tlsManager.registerWith(deviceManager);
 
-let fingerprints: StoredFingerprint[] = [];
-let clusters: StoredFingerprint[][] = [];
-let uniques: StoredFingerprint[] = [];
+let fingerprints: devicer.StoredFingerprint[] = [];
+let clusters: devicer.StoredFingerprint[][] = [];
+let uniques: devicer.StoredFingerprint[] = [];
 
 router.get('/', async (context) => {
   const indexBody = await Deno.readTextFile('./static/index.html');
@@ -62,7 +56,7 @@ router.get('/wss', async (context) => {
     'x-tls-extensions': requestHeaders['x-tls-extensions'] ?? null,
     'x-http2-settings': requestHeaders['x-http2-settings'] ?? null,
   };
-  const tlsProfile = buildTlsProfile(requestHeaders);
+  const tlsProfile = tlsDevicer.buildTlsProfile(requestHeaders);
   const realIp = context.request.headers.get('X-Real-IP') ?? context.request.ip;
 
   if (Object.values(tlsHeaderLog).some((value) => value !== null)) {
@@ -101,12 +95,12 @@ router.get('/wss', async (context) => {
     const json = JSON.parse(event.data);
     if (json.type === 'data') { // If message type == data, execute hashing procedure
       try {
-        const hash = getHash(JSON.stringify(json.data)); // Generate hash
+        const hash = devicer.getHash(JSON.stringify(json.data)); // Generate hash
         console.log('Hash generated:', hash);
 
         const fingerprintCandidates = await adapter.findCandidates(json.data, 65, 50); // Get up to 50 fingerprint candidates from database
-        const exactMatchFound = fingerprintCandidates.some((fp) => fp.confidence >= 100);
-        const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
+        const exactMatchFound = fingerprintCandidates.some((fp: devicer.StoredFingerprint) => fp.confidence >= 100);
+        const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp: devicer.StoredFingerprint) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
         const identifyResult = await deviceManager.identify(json.data, { ip: realIp, tlsProfile, headers: requestHeaders }) as unknown as Record<string, unknown>; // Identify device and insert fingerprint into database
         const tlsConsistency = identifyResult.tlsConsistency as Record<string, unknown> | undefined;

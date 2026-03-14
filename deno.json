@@ -4,12 +4,8 @@
     "start": "deno run --allow-all --env-file main.ts"
   },
   "imports": {
-    "devicer-intel": "npm:devicer-intel@^1.0.0",
     "oak": "jsr:@oak/oak",
-    "devicer": "npm:devicer.js@1.5.11",
-    "snatch": "npm:snatch.js@1.3.0",
-		"tls-devicer": "npm:tls-devicer@0.1.2",
-		"ip-devicer": "npm:ip-devicer@0.2.7",
+    "devicer-suite": "npm:@gatewaycorporate/devicer-intel",
     "sqlite": "jsr:@db/sqlite"
   },
   "nodeModulesDir": "auto"

@@ -1,12 +1,11 @@
-import { calculateConfidence, FPDataSet } from "devicer";
-import { StorageAdapter, StoredFingerprint } from "devicer";
+import { devicer } from "devicer-suite";
 
-export async function clusterFingerprints(adapter: StorageAdapter, eps: number, minPts: number): Promise<[StoredFingerprint[][], StoredFingerprint[]]> {
+export async function clusterFingerprints(adapter: devicer.StorageAdapter, eps: number, minPts: number): Promise<[devicer.StoredFingerprint[][], devicer.StoredFingerprint[]]> {
     const fingerprints = await adapter.getAllFingerprints();
     return dbscan(fingerprints, eps, minPts);
 }
 
-export function dbscan(data: StoredFingerprint[], eps: number, minPts: number): [StoredFingerprint[][], StoredFingerprint[]] {
+export function dbscan(data: devicer.StoredFingerprint[], eps: number, minPts: number): [devicer.StoredFingerprint[][], devicer.StoredFingerprint[]] {
     const clusterAssignments: number[] = new Array(data.length).fill(-1);
     let clusterId = 0;
     const parsedData = data.map(fp => fp.fingerprint);
@@ -47,7 +46,7 @@ export function dbscan(data: StoredFingerprint[], eps: number, minPts: number): 
         }
     }
 
-    const clusters: StoredFingerprint[][] = Array.from({ length: clusterId }, () => []);
+    const clusters: devicer.StoredFingerprint[][] = Array.from({ length: clusterId }, () => []);
     for (let i = 0; i < data.length; i++) {
         const assignment = clusterAssignments[i];
         if (assignment >= 0) {
@@ -55,7 +54,7 @@ export function dbscan(data: StoredFingerprint[], eps: number, minPts: number): 
         }
     }
 
-    const uniques: StoredFingerprint[] = [];
+    const uniques: devicer.StoredFingerprint[] = [];
     for (let i = 0; i < data.length; i++) {
         if (clusterAssignments[i] === -1) {
             uniques.push(data[i]);
@@ -65,6 +64,6 @@ export function dbscan(data: StoredFingerprint[], eps: number, minPts: number): 
     return [clusters, uniques];
 }
 
-function distance(fp1: FPDataSet, fp2: FPDataSet): number {
-    return 1 - (calculateConfidence(fp1, fp2) / 100);
+function distance(fp1: devicer.FPDataSet, fp2: devicer.FPDataSet): number {
+    return 1 - (devicer.calculateConfidence(fp1, fp2) / 100);
 }

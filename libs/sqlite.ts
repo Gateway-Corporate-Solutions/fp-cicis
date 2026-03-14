@@ -1,9 +1,8 @@
 import { Database } from "sqlite";
 import { randomUUID } from "node:crypto";
-import type { DeviceMatch, StorageAdapter } from "devicer";
-import { calculateConfidence } from "devicer";
+import { devicer } from "devicer-suite"; 
 
-export function createSqliteAdapter(dbPath: string): StorageAdapter {
+export function createSqliteAdapter(dbPath: string): devicer.StorageAdapter {
 	let db: Database;
 
 	return {
@@ -19,7 +18,7 @@ export function createSqliteAdapter(dbPath: string): StorageAdapter {
 				)
 			`).run();
 		},
-		async save(snapshot) {
+		async save(snapshot: devicer.FingerprintSnapshot) {
 			const id = randomUUID();
 			await db.prepare(
 				`INSERT INTO fingerprints (id, deviceId, data, timestamp) VALUES (?, ?, ?, ?)`
@@ -31,7 +30,7 @@ export function createSqliteAdapter(dbPath: string): StorageAdapter {
 			);
 			return id;
 		},
-		async getHistory(deviceId, limit = 50) {
+		async getHistory(deviceId: string, limit = 50) {
 			const rows = await db.prepare(
 				`SELECT * FROM fingerprints WHERE deviceId = ? ORDER BY timestamp DESC LIMIT ?`
 			).all(deviceId, limit);
@@ -42,7 +41,7 @@ export function createSqliteAdapter(dbPath: string): StorageAdapter {
 				timestamp: new Date(row.timestamp),
 			}));
 		},
-		async findCandidates(query, minConfidence, limit = 20) {
+		async findCandidates(query: devicer.FingerprintQuery, minConfidence: number, limit = 20) {
 			const rows = await db.prepare(
 				`SELECT * FROM fingerprints WHERE 
 					JSON_EXTRACT(data, '$.deviceMemory') = ? OR 
@@ -63,9 +62,9 @@ export function createSqliteAdapter(dbPath: string): StorageAdapter {
 
 			const pool = prelim.length > 0 ? prelim : rows; // Fall back to full set if no biometric signals matched
 
-			const candidates: Array<DeviceMatch & { confidence: number }> = [];
+			const candidates: Array<devicer.DeviceMatch & { confidence: number }> = [];
 			for (const row of pool) {
-				const confidence = calculateConfidence(query, JSON.parse(row.data));
+				const confidence = devicer.calculateConfidence(query, JSON.parse(row.data));
 				if (confidence >= minConfidence) {
 					candidates.push({
 						deviceId: row.deviceId,
@@ -76,7 +75,7 @@ export function createSqliteAdapter(dbPath: string): StorageAdapter {
 			}
 			return candidates.sort((a, b) => b.confidence - a.confidence).slice(0, limit);
 		},
-		linkToUser(_deviceId, _userId) {
+		linkToUser(_deviceId: string, _userId: string) {
 			// This method would require an additional table to store device-user associations.
 			// For simplicity, it's not implemented here. In a real implementation, you'd want to create a separate "device_users" table and insert/update records there.
 			return Promise.resolve();
