@@ -17,18 +17,18 @@ const deviceManager = new devicer.DeviceManager(adapter, {  // Initialize Device
 	candidateMinScore: 40,
 	logger: console
 });
-const ipManager = new ipDevicer.IpManager({
+const ipManager = new ipDevicer.IpManager({ // Initialize IpManager with config
 	licenseKey: licenseKey,
 	maxmindPath: "./data/GeoLite2-City.mmdb",
 	asnPath: "./data/GeoLite2-ASN.mmdb",
 	enableReputation: true,
 });
-const tlsManager = new tlsDevicer.TlsManager({
+const tlsManager = new tlsDevicer.TlsManager({ // Initialize TlsManager with config
 	licenseKey: licenseKey,
 });
 
-ipManager.registerWith(deviceManager);
-tlsManager.registerWith(deviceManager);
+ipManager.registerWith(deviceManager); // Register IpManager with DeviceManager to enable IP enrichment during identification
+tlsManager.registerWith(deviceManager); // Register TlsManager with DeviceManager to enable TLS enrichment during identification
 
 let fingerprints: devicer.StoredFingerprint[] = [];
 let clusters: devicer.StoredFingerprint[][] = [];
