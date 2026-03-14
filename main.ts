@@ -104,7 +104,7 @@ router.get('/wss', async (context) => {
         const hash = getHash(JSON.stringify(json.data)); // Generate hash
         console.log('Hash generated:', hash);
 
-        const fingerprintCandidates = await adapter.findCandidates(json.data, 50, 50); // Get up to 50 fingerprint candidates from database
+        const fingerprintCandidates = await adapter.findCandidates(json.data, 65, 50); // Get up to 50 fingerprint candidates from database
         const exactMatchFound = fingerprintCandidates.some((fp) => fp.confidence >= 100);
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
@@ -138,11 +138,12 @@ router.get('/wss', async (context) => {
 					console.log('Exact match found for fingerprint with hash:', hash);
 				} else if (closestMatch >= confidenceThreshold) {
 					console.log(`Close match found for fingerprint with hash: ${hash}, confidence: ${closestMatch}`);
+        	console.log('Fingerprint inserted into database with hash:', hash);
 				} else {
 					console.log('No close match found for fingerprint with hash:', hash);
+        	console.log('Fingerprint inserted into database with hash:', hash);
 				}
 
-        console.log('Fingerprint inserted into database with hash:', hash);
 				socket.send(JSON.stringify({ // Send match info back over socket
 					type: 'fingerprint',
 					data: {
