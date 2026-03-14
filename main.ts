@@ -108,7 +108,7 @@ router.get('/wss', async (context) => {
         const exactMatchFound = fingerprintCandidates.some((fp) => fp.confidence >= 100);
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
-        const identifyResult = await deviceManager.identify(json.data, { ip: realIp, tlsProfile }) as unknown as Record<string, unknown>; // Identify device and insert fingerprint into database
+        const identifyResult = await deviceManager.identify(json.data, { ip: realIp, tlsProfile, headers: requestHeaders }) as unknown as Record<string, unknown>; // Identify device and insert fingerprint into database
         const tlsConsistency = identifyResult.tlsConsistency as Record<string, unknown> | undefined;
 
         if (tlsConsistency) {
