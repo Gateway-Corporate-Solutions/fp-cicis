@@ -18,7 +18,7 @@ export function createSqliteAdapter(dbPath: string): devicer.StorageAdapter {
 				)
 			`).run();
 		},
-		async save(snapshot: devicer.FingerprintSnapshot) {
+		async save(snapshot) {
 			const id = randomUUID();
 			await db.prepare(
 				`INSERT INTO fingerprints (id, deviceId, data, timestamp) VALUES (?, ?, ?, ?)`
@@ -41,7 +41,7 @@ export function createSqliteAdapter(dbPath: string): devicer.StorageAdapter {
 				timestamp: new Date(row.timestamp),
 			}));
 		},
-		async findCandidates(query: devicer.FingerprintQuery, minConfidence: number, limit = 20) {
+		async findCandidates(query, minConfidence: number, limit = 20) {
 			const rows = await db.prepare(
 				`SELECT * FROM fingerprints WHERE 
 					JSON_EXTRACT(data, '$.deviceMemory') = ? OR 
