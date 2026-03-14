@@ -129,11 +129,11 @@ router.get('/wss', async (context) => {
 					console.log('Exact match found for fingerprint with hash:', hash);
 				} else if (closestMatch >= confidenceThreshold) {
 					console.log(`Close match found for fingerprint with hash: ${hash}, confidence: ${closestMatch}`);
-        	console.log('Fingerprint inserted into database with hash:', hash);
 				} else {
 					console.log('No close match found for fingerprint with hash:', hash);
-        	console.log('Fingerprint inserted into database with hash:', hash);
 				}
+
+				console.log('Fingerprint inserted into database with hash:', hash);
 
 				socket.send(JSON.stringify({ // Send match info back over socket
 					type: 'fingerprint',
