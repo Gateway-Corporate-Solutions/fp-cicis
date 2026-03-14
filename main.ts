@@ -12,23 +12,26 @@ const adapter = createSqliteAdapter('./fp.db');
 await adapter.init(); // Initialize the SQLite adapter (creates table if not exists)
 const confidenceThreshold = 80; // Set confidence threshold for device matching
 
-const deviceManager = new devicer.DeviceManager(adapter, {  // Initialize DeviceManager with SQLite adapter
+// Initialize DeviceManager with SQLite adapter
+const deviceManager = new devicer.DeviceManager(adapter, {  
 	matchThreshold: confidenceThreshold,
 	candidateMinScore: 40,
 	logger: console
 });
-const ipManager = new ipDevicer.IpManager({ // Initialize IpManager with config
+// Initialize IpManager with config
+const ipManager = new ipDevicer.IpManager({ 
 	licenseKey: licenseKey,
 	maxmindPath: "./data/GeoLite2-City.mmdb",
 	asnPath: "./data/GeoLite2-ASN.mmdb",
 	enableReputation: true,
 });
-const tlsManager = new tlsDevicer.TlsManager({ // Initialize TlsManager with config
+// Initialize TlsManager with config
+const tlsManager = new tlsDevicer.TlsManager({ 
 	licenseKey: licenseKey,
 });
 
-ipManager.registerWith(deviceManager); // Register IpManager with DeviceManager to enable IP enrichment during identification
-tlsManager.registerWith(deviceManager); // Register TlsManager with DeviceManager to enable TLS enrichment during identification
+deviceManager.use(ipManager); // Register IpManager with DeviceManager to enable IP enrichment during identification
+deviceManager.use(tlsManager); // Register TlsManager with DeviceManager to enable TLS enrichment during identification
 
 let fingerprints: devicer.StoredFingerprint[] = [];
 let clusters: devicer.StoredFingerprint[][] = [];
@@ -99,8 +102,8 @@ router.get('/wss', async (context) => {
         console.log('Hash generated:', hash);
 
         const fingerprintCandidates = await adapter.findCandidates(json.data, 65, 50); // Get up to 50 fingerprint candidates from database
-        const exactMatchFound = fingerprintCandidates.some((fp: devicer.StoredFingerprint) => fp.confidence >= 100);
-        const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp: devicer.StoredFingerprint) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
+        const exactMatchFound = fingerprintCandidates.some((fp) => fp.confidence >= 100);
+        const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
         const identifyResult = await deviceManager.identify(json.data, { ip: realIp, tlsProfile, headers: requestHeaders }) as unknown as Record<string, unknown>; // Identify device and insert fingerprint into database
         const tlsConsistency = identifyResult.tlsConsistency as Record<string, unknown> | undefined;

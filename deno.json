@@ -5,7 +5,7 @@
   },
   "imports": {
     "oak": "jsr:@oak/oak",
-    "devicer-suite": "npm:@gatewaycorporate/devicer-intel",
+    "devicer-suite": "npm:@gatewaycorporate/devicer-intel@1.1.1",
     "sqlite": "jsr:@db/sqlite"
   },
   "nodeModulesDir": "auto"
