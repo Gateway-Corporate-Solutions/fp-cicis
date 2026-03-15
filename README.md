@@ -1,6 +1,6 @@
 # FP-Cicis
 
-FP-Cicis is an example implementation of a C2 web server that utilizes the Devicer Intelligence Suite
+FP-Cicis is an reference implementation of a web server utilizing the Devicer Intelligence Suite
 to demonstrate Gateway Corporate Solutions' advanced browser fingerprinting technology.
 
 ### Usage
