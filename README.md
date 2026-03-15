@@ -1,6 +1,7 @@
 # FP-Cicis
 
-FP-Cicis is a demonstration of a command-and-control web server that does basic fingerprinting, based on the open-source devicer.js and snatch.js libraries developed by Gateway Corporate Solutions
+FP-Cicis is an example of a command-and-control web server that utilizes the Devicer Intelligence Suite
+to demonstrate Gateway Corporate Solutions' advanced browser fingerprinting technology.
 
 ### Usage
 
