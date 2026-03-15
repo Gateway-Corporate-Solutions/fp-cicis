@@ -96,12 +96,7 @@
 
 								if (message.type === "blacklistAlert") {
 										console.warn("Blacklist alert from FP-Devicer: ", message.data);
-										alert(`
-												ALERT: Your device is from a country with a high risk of fraud (${message.data.country}).
-												FP-Devicer has flagged your fingerprint as potentially malicious
-												based on its IP address and other factors. Please contact support
-												if you believe this is an error.
-										`);
+										alert(`ALERT: Your device is from a country (${message.data.country}) with a high risk of fraud. FP-Devicer has flagged your fingerprint as potentially malicious based on its IP address and other factors. Please contact support if you believe this is an error.`);
 								}
             };
 
