@@ -132,10 +132,11 @@ export function createTlsManagerSqliteAdapter(dbPath: string): tlsDevicer.AsyncT
 			return snapshot;
 		},
 
+		// deno-lint-ignore require-await
 		async getHistory(deviceId, limit) {
-			const rows = await db.prepare(
-				`SELECT * FROM tls_snapshots WHERE deviceId = ? ORDER BY timestamp DESC LIMIT ?`
-			).all(deviceId, limit);
+			const rows = limit !== undefined
+				? db.prepare(`SELECT * FROM tls_snapshots WHERE deviceId = ? ORDER BY timestamp DESC LIMIT ?`).all(deviceId, limit)
+				: db.prepare(`SELECT * FROM tls_snapshots WHERE deviceId = ? ORDER BY timestamp DESC`).all(deviceId);
 			return rows.map(row => ({
 				id: row.id,
 				deviceId: row.deviceId,
@@ -200,10 +201,11 @@ export function createIpManagerSqliteAdapter(dbPath: string): ipDevicer.AsyncIpS
 			return snapshot;
 		},
 
+		// deno-lint-ignore require-await
 		async getHistory(deviceId, limit) {
-			const rows = await db.prepare(
-				`SELECT * FROM ip_snapshots WHERE deviceId = ? ORDER BY timestamp DESC LIMIT ?`
-			).all(deviceId, limit);
+			const rows = limit !== undefined
+				? db.prepare(`SELECT * FROM ip_snapshots WHERE deviceId = ? ORDER BY timestamp DESC LIMIT ?`).all(deviceId, limit)
+				: db.prepare(`SELECT * FROM ip_snapshots WHERE deviceId = ? ORDER BY timestamp DESC`).all(deviceId);
 			return rows.map(row => ({
 				id: row.id,
 				deviceId: row.deviceId,
