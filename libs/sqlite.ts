@@ -164,6 +164,11 @@ export function createTlsManagerSqliteAdapter(dbPath: string): tlsDevicer.AsyncT
 				await db.prepare(`DELETE FROM tls_snapshots`).run();
 			}
 		},
+
+		async size() {
+			const row = await db.prepare(`SELECT COUNT(DISTINCT deviceId) as count FROM tls_snapshots`).get();
+			return row ? row.count : 0;
+		}
 	};
 }
 

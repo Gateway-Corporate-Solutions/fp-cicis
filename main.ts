@@ -42,6 +42,7 @@ const ipManager = new ipDevicer.IpManager({
 // Initialize TlsManager with config
 const tlsManager = new tlsDevicer.TlsManager({ 
 	licenseKey: licenseKey,
+	storage: adapters.tls
 });
 
 deviceManager.use(ipManager); // Register IpManager with DeviceManager to enable IP enrichment during identification
