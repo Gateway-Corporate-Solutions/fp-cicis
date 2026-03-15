@@ -2,6 +2,9 @@ import { Database } from "sqlite";
 import { randomUUID } from "node:crypto";
 import { devicer, ipDevicer, tlsDevicer } from "devicer-suite"; 
 
+// These adapters are specific to Deno. In a Node.js environment, you would
+// use the built-in better-sqlite3 implementations.
+
 // --- DeviceManager storage --------------------------------------------------------------
 
 export function createDevManagerSqliteAdapter(dbPath: string): devicer.StorageAdapter {

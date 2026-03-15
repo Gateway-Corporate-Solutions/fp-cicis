@@ -13,6 +13,8 @@ const app = new Application();
 const router = new Router();
 
 // Initialize SQLite adapters for DeviceManager, IpManager, and TlsManager
+// These adapters are specific to Deno. In a Node.js environment, you would
+// use the built-in better-sqlite3 implementations.
 const adapters = {
 	device: createDevManagerSqliteAdapter('./data/fp.db'),
 	ip: createIpManagerSqliteAdapter('./data/ip.db'),
