@@ -1,6 +1,10 @@
 import { Application, Router } from 'oak';
 import { devicer, ipDevicer, tlsDevicer } from "devicer-suite";
-import { createSqliteAdapter } from "./libs/sqlite.ts";
+import { 
+	createDevManagerSqliteAdapter,
+	createIpManagerSqliteAdapter,
+	createTlsManagerSqliteAdapter
+} from "./libs/sqlite.ts";
 import { clusterFingerprints } from "./libs/clustering.ts";
 
 const licenseKey = Deno.env.get('DEVICER_LICENSE_KEY');
@@ -8,12 +12,19 @@ const licenseKey = Deno.env.get('DEVICER_LICENSE_KEY');
 const app = new Application();
 const router = new Router();
 
-const adapter = createSqliteAdapter('./fp.db');
-await adapter.init(); // Initialize the SQLite adapter (creates table if not exists)
+const adapters = {
+	device: createDevManagerSqliteAdapter('./data/fp.db'),
+	ip: createIpManagerSqliteAdapter('./data/ip.db'),
+	tls: createTlsManagerSqliteAdapter('./data/tls.db'),
+}
+for (const adapter of Object.values(adapters)) {
+	await adapter.init();
+}
+
 const confidenceThreshold = 80; // Set confidence threshold for device matching
 
 // Initialize DeviceManager with SQLite adapter
-const deviceManager = new devicer.DeviceManager(adapter, {  
+const deviceManager = new devicer.DeviceManager(adapters.device, {  
 	matchThreshold: confidenceThreshold,
 	candidateMinScore: 40,
 	logger: console
@@ -24,6 +35,7 @@ const ipManager = new ipDevicer.IpManager({
 	maxmindPath: "./data/GeoLite2-City.mmdb",
 	asnPath: "./data/GeoLite2-ASN.mmdb",
 	enableReputation: true,
+	storage: adapters.ip
 });
 // Initialize TlsManager with config
 const tlsManager = new tlsDevicer.TlsManager({ 
@@ -101,7 +113,7 @@ router.get('/wss', async (context) => {
         const hash = devicer.getHash(JSON.stringify(json.data)); // Generate hash
         console.log('Hash generated:', hash);
 
-        const fingerprintCandidates = await adapter.findCandidates(json.data, 50, 50); // Get up to 50 fingerprint candidates from database
+        const fingerprintCandidates = await adapters.device.findCandidates(json.data, 50, 50); // Get up to 50 fingerprint candidates from database
         const exactMatchFound = fingerprintCandidates.some((fp: devicer.DeviceMatch) => fp.confidence >= 100);
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp: devicer.DeviceMatch) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
@@ -166,9 +178,9 @@ app.use(async (context, next) => {
 app.listen({ port: parseInt(Deno.env.get('PORT') ?? '8000') });
 console.log('Server is running on http://localhost:8000');
 
-fingerprints = await adapter.getAllFingerprints();
+fingerprints = await adapters.device.getAllFingerprints();
 console.log(`Current fingerprints in database: ${fingerprints.length}`);
-[clusters, uniques] = await clusterFingerprints(adapter, 1 - confidenceThreshold / 100, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
+[clusters, uniques] = await clusterFingerprints(adapters.device, 1 - confidenceThreshold / 100, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
 console.log(`Current clusters: ${clusters.length}`);
 clusters.forEach((cluster, index) => { // Log cluster details
   console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);
@@ -177,9 +189,9 @@ clusters.forEach((cluster, index) => { // Log cluster details
 console.log(`Unique fingerprints: ${uniques.length}`); // Log number of unique fingerprints that don't belong to any cluster
 
 setInterval(async () => {
-  fingerprints = await adapter.getAllFingerprints();
+  fingerprints = await adapters.device.getAllFingerprints();
   console.log(`Current fingerprints in database: ${fingerprints.length}`);
-  [clusters, uniques] = await clusterFingerprints(adapter, 1 - confidenceThreshold / 100, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
+  [clusters, uniques] = await clusterFingerprints(adapters.device, 1 - confidenceThreshold / 100, 2); // Cluster fingerprints every 10 minutes with eps=0.4 and minPts=2
   console.log(`Current clusters: ${clusters.length}`);
   clusters.forEach((cluster, index) => { // Log cluster details
     console.log(`Cluster ${index + 1}: ${cluster.length} fingerprints`);

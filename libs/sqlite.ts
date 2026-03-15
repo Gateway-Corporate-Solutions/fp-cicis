@@ -1,8 +1,10 @@
 import { Database } from "sqlite";
 import { randomUUID } from "node:crypto";
-import { devicer } from "devicer-suite"; 
+import { devicer, ipDevicer, tlsDevicer } from "devicer-suite"; 
 
-export function createSqliteAdapter(dbPath: string): devicer.StorageAdapter {
+// --- DeviceManager storage --------------------------------------------------------------
+
+export function createDevManagerSqliteAdapter(dbPath: string): devicer.StorageAdapter {
 	let db: Database;
 
 	return {
@@ -98,13 +100,147 @@ export function createSqliteAdapter(dbPath: string): devicer.StorageAdapter {
 	};
 }
 
-/**
- * Example usage:
- * ```
- * const adapter = createSqliteAdapter('./fp.db');
- * await adapter.init();
- * await adapter.save({ deviceId: 'dev123', fingerprint: { ... }, timestamp: new Date() });
- * const history = await adapter.getHistory('dev123');
- * const candidates = await adapter.findCandidates({ query }, 50);
- * ```
- */
+// ── TLS snapshots ───────────────────────────────────────────
+
+export function createTlsManagerSqliteAdapter(dbPath: string): tlsDevicer.AsyncTlsStorage {
+	let db: Database;
+	
+	return {
+		// deno-lint-ignore require-await
+		async init() {
+			db = new Database(dbPath);
+			db.prepare(`
+				CREATE TABLE IF NOT EXISTS tls_snapshots (
+					id TEXT PRIMARY KEY,
+					deviceId TEXT NOT NULL,
+					timestamp TEXT NOT NULL,
+					profile TEXT NOT NULL
+				)
+			`).run();
+		},
+
+		async save(partial) {
+			const snapshot = { ...partial, id: randomUUID() };
+			await db.prepare(
+				`INSERT INTO tls_snapshots (id, deviceId, timestamp, profile) VALUES (?, ?, ?, ?)`
+			).run(
+				snapshot.id,
+				snapshot.deviceId,
+				snapshot.timestamp.toISOString(),
+				JSON.stringify(snapshot.profile)
+			);
+			return snapshot;
+		},
+
+		async getHistory(deviceId, limit) {
+			const rows = await db.prepare(
+				`SELECT * FROM tls_snapshots WHERE deviceId = ? ORDER BY timestamp DESC LIMIT ?`
+			).all(deviceId, limit);
+			return rows.map(row => ({
+				id: row.id,
+				deviceId: row.deviceId,
+				timestamp: new Date(row.timestamp),
+				profile: JSON.parse(row.profile),
+			}));
+		},
+
+		async getLatest(deviceId) {
+			const row = await db.prepare(
+				`SELECT * FROM tls_snapshots WHERE deviceId = ? ORDER BY timestamp DESC LIMIT 1`
+			).get(deviceId);
+			return row ? {
+				id: row.id,
+				deviceId: row.deviceId,
+				timestamp: new Date(row.timestamp),
+				profile: JSON.parse(row.profile),
+			} : null;
+		},
+
+		async clear(deviceId) {
+			if (deviceId !== undefined) {
+				await db.prepare(`DELETE FROM tls_snapshots WHERE deviceId = ?`).run(deviceId);
+			} else {
+				await db.prepare(`DELETE FROM tls_snapshots`).run();
+			}
+		},
+	};
+}
+
+// --- IP Snapshots ------------------------------------------------------------------------------
+
+export function createIpManagerSqliteAdapter(dbPath: string): ipDevicer.AsyncIpStorage {
+	let db: Database;
+	
+	return {
+		// deno-lint-ignore require-await
+		async init() {
+			db = new Database(dbPath);
+			db.prepare(`
+				CREATE TABLE IF NOT EXISTS ip_snapshots (
+					id TEXT PRIMARY KEY,
+					deviceId TEXT NOT NULL,
+					timestamp TEXT NOT NULL,
+					ip TEXT NOT NULL,
+					enrichment TEXT NOT NULL
+				)
+			`).run();
+		},
+
+		async save(partial) {
+			const snapshot = { ...partial, id: randomUUID() };
+			await db.prepare(
+				`INSERT INTO ip_snapshots (id, deviceId, timestamp, ip, enrichment) VALUES (?, ?, ?, ?, ?)`
+			).run(
+				snapshot.id,
+				snapshot.deviceId,
+				snapshot.timestamp.toISOString(),
+				snapshot.ip,
+				JSON.stringify(snapshot.enrichment)
+			);
+			return snapshot;
+		},
+
+		async getHistory(deviceId, limit) {
+			const rows = await db.prepare(
+				`SELECT * FROM ip_snapshots WHERE deviceId = ? ORDER BY timestamp DESC LIMIT ?`
+			).all(deviceId, limit);
+			return rows.map(row => ({
+				id: row.id,
+				deviceId: row.deviceId,
+				timestamp: new Date(row.timestamp),
+				ip: row.ip,
+				enrichment: JSON.parse(row.enrichment),
+			}));
+		},
+
+		async getLatest(deviceId): Promise<ipDevicer.IpSnapshot | null> {
+			const row = await db.prepare(
+				`SELECT * FROM ip_snapshots WHERE deviceId = ? ORDER BY timestamp DESC LIMIT 1`
+			).get(deviceId);
+			return row ? {
+				id: row.id,
+				deviceId: row.deviceId,
+				timestamp: new Date(row.timestamp),
+				ip: row.ip,
+				enrichment: JSON.parse(row.enrichment),
+			} : null;
+		},
+
+		async clear(deviceId) {
+			if (deviceId !== undefined) {
+				await db.prepare(`DELETE FROM ip_snapshots WHERE deviceId = ?`).run(deviceId);
+			} else {
+				await db.prepare(`DELETE FROM ip_snapshots`).run();
+			}
+		},
+
+		async size() {
+			const row = await db.prepare(`SELECT COUNT(DISTINCT deviceId) as count FROM ip_snapshots`).get();
+			return row ? row.count : 0;
+		},
+
+		async close() {
+			await db.close();
+		},
+	};
+}
