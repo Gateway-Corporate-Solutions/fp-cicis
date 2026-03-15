@@ -101,9 +101,9 @@ router.get('/wss', async (context) => {
         const hash = devicer.getHash(JSON.stringify(json.data)); // Generate hash
         console.log('Hash generated:', hash);
 
-        const fingerprintCandidates = await adapter.findCandidates(json.data, 65, 50); // Get up to 50 fingerprint candidates from database
-        const exactMatchFound = fingerprintCandidates.some((fp) => fp.confidence >= 100);
-        const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
+        const fingerprintCandidates = await adapter.findCandidates(json.data, 50, 50); // Get up to 50 fingerprint candidates from database
+        const exactMatchFound = fingerprintCandidates.some((fp: devicer.DeviceMatch) => fp.confidence >= 100);
+        const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp: devicer.DeviceMatch) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
         
         const identifyResult = await deviceManager.identify(json.data, { ip: realIp, tlsProfile, headers: requestHeaders }) as unknown as Record<string, unknown>; // Identify device and insert fingerprint into database
         const tlsConsistency = identifyResult.tlsConsistency as Record<string, unknown> | undefined;
