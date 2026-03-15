@@ -12,6 +12,7 @@ const licenseKey = Deno.env.get('DEVICER_LICENSE_KEY');
 const app = new Application();
 const router = new Router();
 
+// Initialize SQLite adapters for DeviceManager, IpManager, and TlsManager
 const adapters = {
 	device: createDevManagerSqliteAdapter('./data/fp.db'),
 	ip: createIpManagerSqliteAdapter('./data/ip.db'),
@@ -21,9 +22,10 @@ for (const adapter of Object.values(adapters)) {
 	await adapter.init();
 }
 
-const confidenceThreshold = 80; // Set confidence threshold for device matching
+// Set confidence threshold for device matching
+const confidenceThreshold = 80;
 
-// Initialize DeviceManager with SQLite adapter
+// Initialize DeviceManager with config
 const deviceManager = new devicer.DeviceManager(adapters.device, {  
 	matchThreshold: confidenceThreshold,
 	candidateMinScore: 40,
@@ -45,6 +47,7 @@ const tlsManager = new tlsDevicer.TlsManager({
 deviceManager.use(ipManager); // Register IpManager with DeviceManager to enable IP enrichment during identification
 deviceManager.use(tlsManager); // Register TlsManager with DeviceManager to enable TLS enrichment during identification
 
+// Global variables to hold fingerprints, clusters, and uniques for analytics
 let fingerprints: devicer.StoredFingerprint[] = [];
 let clusters: devicer.StoredFingerprint[][] = [];
 let uniques: devicer.StoredFingerprint[] = [];
