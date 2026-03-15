@@ -93,6 +93,16 @@
                     p.innerHTML += `<b>Fingerprint Clusters:</b> ${message.data.clusters}<br>`;
                     p.innerHTML += `<b>Average Cluster Size:</b> ${message.data.averageClusterSize}<br>`;
                 }
+
+								if (message.type === "blacklistAlert") {
+										console.warn("Blacklist alert from FP-Devicer: ", message.data);
+										alert(`
+												ALERT: Your device is from a country with a high risk of fraud (${message.data.country}).
+												FP-Devicer has flagged your fingerprint as potentially malicious
+												based on its IP address and other factors. Please contact support
+												if you believe this is an error.
+										`);
+								}
             };
 
             ws.onopen = function() {

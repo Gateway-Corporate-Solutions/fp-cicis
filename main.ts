@@ -158,6 +158,18 @@ router.get('/wss', async (context) => {
 						closestMatch: closestMatch || 0
 					}
 				}));
+
+				const country = (identifyResult.enrichmentInfo as { details?: { ip?: { country?: string } } } | undefined)?.details?.ip?.country;
+				if (['IN', 'RU', 'CN', 'NK'].includes(country as string)) {
+					console.warn('Device with fingerprint hash', hash, 'is associated with a high-risk country:', country);
+					socket.send(JSON.stringify({ // Send blacklist alert back over socket
+						type: 'blacklistAlert',
+						data: {
+							hash: hash,
+							country: country
+						}
+					}));
+				}
       } catch (error) { // If an error occurs, catch and return
         console.error('Error processing data:', error);
         socket.send(JSON.stringify({ // Send error back over socket
