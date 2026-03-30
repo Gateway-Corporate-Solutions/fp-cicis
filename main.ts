@@ -25,7 +25,7 @@ for (const adapter of Object.values(adapters)) {
 }
 
 // Set confidence threshold for device matching
-const confidenceThreshold = 80;
+const confidenceThreshold = 85;
 
 // Initialize DeviceManager with config
 const deviceManager = new devicer.DeviceManager(adapters.device, {  
