@@ -32,8 +32,12 @@
     <!-- Meta Tags Generated with https://metatags.io -->
 
     <link rel="stylesheet" href="/styles.css">
-    <script src="/bundle.js"></script>
+    <script src="/bundle.js?v=20260405b"></script>
     <script>
+        function sleep(ms) {
+            return new Promise((resolve) => setTimeout(resolve, ms));
+        }
+
         function renderValue(label, value) {
             if (value === null || value === undefined || value === "") {
                 return "";
@@ -53,6 +57,27 @@
                 return "";
             }
             return `<b>${label}:</b> ${values.join(", ")}<br>`;
+        }
+
+        async function collectFingerprintPayload(agent) {
+            if (typeof agent.capture === "function") {
+                return agent.capture({
+                    minBehavioralDurationMs: 1500,
+                    maxBehavioralWaitMs: 6000,
+                    pollIntervalMs: 100,
+                    requireInteraction: true,
+                });
+            }
+
+            console.warn("FP-Snatch bundle does not expose capture(); using compatibility fallback.");
+            await agent.ready;
+            await sleep(1500);
+
+            if (agent._behavioral && typeof agent._behavioral.computeBehavioralMetrics === "function") {
+                agent.dataset.behavioralMetrics = agent._behavioral.computeBehavioralMetrics();
+            }
+
+            return agent.dataset;
         }
 
         window.onload = () => {
@@ -170,12 +195,7 @@
 
             ws.onopen = async function() {
                 console.log("WebSocket connection established with FP-Devicer.");
-                var payload = await agent.capture({
-                    minBehavioralDurationMs: 1500,
-                    maxBehavioralWaitMs: 6000,
-                    pollIntervalMs: 100,
-                    requireInteraction: true,
-                });
+                var payload = await collectFingerprintPayload(agent);
 
                 if (ws.readyState !== WebSocket.OPEN) {
                     console.warn("WebSocket closed before behavioral capture completed.");
