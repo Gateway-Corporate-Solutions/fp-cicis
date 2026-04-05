@@ -1,9 +1,17 @@
 import { Application, Router } from 'oak';
-import { devicer, ipDevicer, tlsDevicer } from "devicer-suite";
+import { 
+	devicer, 
+	ipDevicer, 
+	tlsDevicer, 
+	bbasDevicer, 
+	peerDevicer 
+} from "devicer-suite";
 import { 
 	createDevManagerSqliteAdapter,
 	createIpManagerSqliteAdapter,
-	createTlsManagerSqliteAdapter
+  createTlsManagerSqliteAdapter,
+  createPeerManagerSqliteAdapter,
+  createBbasManagerSqliteAdapter,
 } from "./libs/sqlite.ts";
 import { clusterFingerprints } from "./libs/clustering.ts";
 
@@ -12,6 +20,16 @@ const licenseKey = Deno.env.get('DEVICER_LICENSE_KEY');
 const app = new Application();
 const router = new Router();
 
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined;
+}
+
+function asStringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : [];
+}
+
 // Initialize SQLite adapters for DeviceManager, IpManager, and TlsManager
 // These adapters are specific to Deno. In a Node.js environment, you would
 // use the built-in better-sqlite3 implementations.
@@ -19,6 +37,8 @@ const adapters = {
 	device: createDevManagerSqliteAdapter('./data/fp.db'),
 	ip: createIpManagerSqliteAdapter('./data/ip.db'),
 	tls: createTlsManagerSqliteAdapter('./data/tls.db'),
+  peer: createPeerManagerSqliteAdapter('./data/peer.db'),
+  bbas: createBbasManagerSqliteAdapter('./data/bbas.db'),
 }
 for (const adapter of Object.values(adapters)) {
 	await adapter.init();
@@ -46,9 +66,21 @@ const tlsManager = new tlsDevicer.TlsManager({
 	licenseKey: licenseKey,
 	storage: adapters.tls
 });
+const peerManager = new peerDevicer.PeerManager({
+  licenseKey: licenseKey,
+  storage: adapters.peer,
+});
+const bbasManager = new bbasDevicer.BbasManager({
+  licenseKey: licenseKey,
+  storage: adapters.bbas,
+  enableBehavioralAnalysis: true,
+  enableCrossPlugin: true,
+});
 
 deviceManager.use(ipManager); // Register IpManager with DeviceManager to enable IP enrichment during identification
 deviceManager.use(tlsManager); // Register TlsManager with DeviceManager to enable TLS enrichment during identification
+deviceManager.use(peerManager); // Register PeerManager after IP/TLS so peer reputation can reuse their enrichments
+deviceManager.use(bbasManager); // Register BbasManager after peer-devicer so cross-plugin bot signals are available
 
 // Global variables to hold fingerprints, clusters, and uniques for analytics
 let fingerprints: devicer.StoredFingerprint[] = [];
@@ -122,9 +154,25 @@ router.get('/wss', async (context) => {
         const fingerprintCandidates = await adapters.device.findCandidates(json.data, 50, 50); // Get up to 50 fingerprint candidates from database
         const exactMatchFound = fingerprintCandidates.some((fp: devicer.DeviceMatch) => fp.confidence >= 100);
         const closestMatch = Math.max(0, ...fingerprintCandidates.map((fp: devicer.DeviceMatch) => fp.confidence)); // Return the closest match, defaulting to 0 if no candidates
+        const userId = requestHeaders['x-user-id'];
         
-        const identifyResult = await deviceManager.identify(json.data, { ip: realIp, tlsProfile, headers: requestHeaders }) as unknown as Record<string, unknown>; // Identify device and insert fingerprint into database
-        const tlsConsistency = identifyResult.tlsConsistency as Record<string, unknown> | undefined;
+        const identifyResult = await deviceManager.identify(json.data, {
+          ip: realIp,
+          userId: typeof userId === 'string' ? userId : undefined,
+          tlsProfile,
+          headers: requestHeaders,
+        }) as unknown as Record<string, unknown>; // Identify device and insert fingerprint into database
+        const tlsConsistency = asRecord(identifyResult.tlsConsistency);
+        const peerReputation = asRecord(identifyResult.peerReputation);
+        const bbasEnrichment = asRecord(identifyResult.bbasEnrichment);
+        const enrichmentInfo = asRecord(identifyResult.enrichmentInfo);
+        const enrichmentDetails = asRecord(enrichmentInfo?.details);
+        const ipDetails = asRecord(enrichmentDetails?.ip);
+        const agentInfo = asRecord(ipDetails?.agentInfo);
+        const uaClassification = asRecord(bbasEnrichment?.uaClassification);
+        const peerConfidenceBoost = typeof identifyResult.peerConfidenceBoost === 'number' ? identifyResult.peerConfidenceBoost : null;
+        const bbasDecision = typeof identifyResult.bbasDecision === 'string' ? identifyResult.bbasDecision : null;
+        const country = typeof ipDetails?.country === 'string' ? ipDetails.country : null;
 
         if (tlsConsistency) {
           if (tlsConsistency.ja4Match === null) {
@@ -155,11 +203,45 @@ router.get('/wss', async (context) => {
 					data: {
 						hash: hash,
 						exactMatchFound,
-						closestMatch: closestMatch || 0
+            closestMatch: closestMatch || 0,
+            deviceId: typeof identifyResult.deviceId === 'string' ? identifyResult.deviceId : null,
+            isNewDevice: identifyResult.isNewDevice === true,
+            ip: {
+              riskScore: typeof ipDetails?.riskScore === 'number' ? ipDetails.riskScore : null,
+              isProxy: ipDetails?.isProxy === true,
+              isVpn: ipDetails?.isVpn === true,
+              isTor: ipDetails?.isTor === true,
+              isHosting: ipDetails?.isHosting === true,
+              isAiAgent: agentInfo?.isAiAgent === true,
+              aiAgentProvider: typeof agentInfo?.aiAgentProvider === 'string' ? agentInfo.aiAgentProvider : null,
+              country,
+            },
+            tls: tlsConsistency ? {
+              consistencyScore: typeof tlsConsistency.consistencyScore === 'number' ? tlsConsistency.consistencyScore : null,
+              ja4Match: typeof tlsConsistency.ja4Match === 'boolean' ? tlsConsistency.ja4Match : null,
+              factors: asStringArray(tlsConsistency.factors),
+            } : null,
+            peer: peerReputation ? {
+              peerCount: typeof peerReputation.peerCount === 'number' ? peerReputation.peerCount : 0,
+              taintScore: typeof peerReputation.taintScore === 'number' ? peerReputation.taintScore : null,
+              trustScore: typeof peerReputation.trustScore === 'number' ? peerReputation.trustScore : null,
+              confidenceBoost: peerConfidenceBoost,
+              factors: asStringArray(peerReputation.factors),
+            } : null,
+            bot: bbasEnrichment ? {
+              botScore: typeof bbasEnrichment.botScore === 'number' ? bbasEnrichment.botScore : null,
+              decision: bbasDecision,
+              isHeadless: uaClassification?.isHeadless === true,
+              isBot: uaClassification?.isBot === true,
+              isCrawler: uaClassification?.isCrawler === true,
+              behavioralHumanScore: typeof asRecord(bbasEnrichment.behavioralSignals)?.humanScore === 'number'
+                ? asRecord(bbasEnrichment.behavioralSignals)?.humanScore
+                : null,
+              factors: asStringArray(bbasEnrichment.botFactors),
+            } : null,
 					}
 				}));
 
-				const country = (identifyResult.enrichmentInfo as { details?: { ip?: { country?: string } } } | undefined)?.details?.ip?.country;
 				if (['IN', 'BD', 'NG', 'RO', 'RU', 'IR', 'CN', 'KP'].includes(country as string)) {
 					console.warn('Device with fingerprint hash', hash, 'is associated with a high-risk country:', country);
 					socket.send(JSON.stringify({ // Send blacklist alert back over socket
@@ -167,6 +249,19 @@ router.get('/wss', async (context) => {
 						data: {
 							hash: hash,
 							country: country
+						}
+					}));
+				}
+
+				if (bbasDecision === 'block' || bbasDecision === 'challenge') {
+					console.warn('Device with fingerprint hash', hash, 'triggered BBAS decision:', bbasDecision);
+					socket.send(JSON.stringify({
+						type: 'botAlert',
+						data: {
+							hash,
+							decision: bbasDecision,
+							botScore: typeof bbasEnrichment?.botScore === 'number' ? bbasEnrichment.botScore : null,
+							factors: asStringArray(bbasEnrichment?.botFactors),
 						}
 					}));
 				}
@@ -193,8 +288,8 @@ app.use(async (context, next) => {
   }
 });
 
-app.listen({ port: parseInt(Deno.env.get('PORT') ?? '8000') });
-console.log('Server is running on http://localhost:8000');
+app.listen({ port: parseInt(Deno.env.get('PORT') ?? '5000') });
+console.log('Server is running on http://localhost:5000');
 
 fingerprints = await adapters.device.getAllFingerprints();
 console.log(`Current fingerprints in database: ${fingerprints.length}`);

@@ -34,10 +34,35 @@
     <link rel="stylesheet" href="/styles.css">
     <script src="/bundle.js"></script>
     <script>
+        function renderValue(label, value) {
+            if (value === null || value === undefined || value === "") {
+                return "";
+            }
+            return `<b>${label}:</b> ${value}<br>`;
+        }
+
+        function renderBoolean(label, value) {
+            if (typeof value !== "boolean") {
+                return "";
+            }
+            return `<b>${label}:</b> ${value ? "Yes" : "No"}<br>`;
+        }
+
+        function renderList(label, values) {
+            if (!Array.isArray(values) || values.length === 0) {
+                return "";
+            }
+            return `<b>${label}:</b> ${values.join(", ")}<br>`;
+        }
+
         window.onload = () => {
             // Initialize Snatch
             var Snatch = window["snatch"];
             var agent = new Snatch();
+            var fingerprintEl = document.getElementById("fingerprint");
+            if (fingerprintEl) {
+                fingerprintEl.innerHTML = "Collecting device and behavioral signals...";
+            }
 
             // Open a websocket connection to FP-Devicer
             var ws = null;
@@ -54,6 +79,8 @@
                     console.log("Fingerprint received from FP-Devicer: ", message.data);
                     var p = document.getElementById("fingerprint");
                     p.innerHTML = `<b>Fingerprint Hash:</b> ${message.data.hash}<br>`
+                    p.innerHTML += renderValue("Device ID", message.data.deviceId);
+                    p.innerHTML += renderBoolean("New Device", message.data.isNewDevice);
                     switch(true) {
                     case message.data.closestMatch == 100:
                         p.innerHTML += `<b>Closest Match:</b> ${message.data.closestMatch} (Exact Match)<br>`;
@@ -65,7 +92,43 @@
                         p.innerHTML += `<b>Closest Match:</b> ${message.data.closestMatch} (No Close Match)<br>`;
                         break;
                     }
+                    if (message.data.ip) {
+                        p.innerHTML += `<br><b>IP Enrichment</b><br>`;
+                        p.innerHTML += renderValue("Country", message.data.ip.country);
+                        p.innerHTML += renderValue("Risk Score", message.data.ip.riskScore);
+                        p.innerHTML += renderBoolean("Proxy", message.data.ip.isProxy);
+                        p.innerHTML += renderBoolean("VPN", message.data.ip.isVpn);
+                        p.innerHTML += renderBoolean("Tor", message.data.ip.isTor);
+                        p.innerHTML += renderBoolean("Hosting", message.data.ip.isHosting);
+                        p.innerHTML += renderBoolean("AI Agent", message.data.ip.isAiAgent);
+                        p.innerHTML += renderValue("AI Agent Provider", message.data.ip.aiAgentProvider);
+                    }
+                    if (message.data.tls) {
+                        p.innerHTML += `<br><b>TLS Enrichment</b><br>`;
+                        p.innerHTML += renderValue("Consistency Score", message.data.tls.consistencyScore);
+                        p.innerHTML += renderBoolean("JA4 Match", message.data.tls.ja4Match);
+                        p.innerHTML += renderList("TLS Factors", message.data.tls.factors);
+                    }
+                    if (message.data.peer) {
+                        p.innerHTML += `<br><b>Peer Reputation</b><br>`;
+                        p.innerHTML += renderValue("Peer Count", message.data.peer.peerCount);
+                        p.innerHTML += renderValue("Taint Score", message.data.peer.taintScore);
+                        p.innerHTML += renderValue("Trust Score", message.data.peer.trustScore);
+                        p.innerHTML += renderValue("Confidence Boost", message.data.peer.confidenceBoost);
+                        p.innerHTML += renderList("Peer Factors", message.data.peer.factors);
+                    }
+                    if (message.data.bot) {
+                        p.innerHTML += `<br><b>Bot Analysis</b><br>`;
+                        p.innerHTML += renderValue("Decision", message.data.bot.decision);
+                        p.innerHTML += renderValue("Bot Score", message.data.bot.botScore);
+                        p.innerHTML += renderBoolean("Headless", message.data.bot.isHeadless);
+                        p.innerHTML += renderBoolean("Bot UA", message.data.bot.isBot);
+                        p.innerHTML += renderBoolean("Crawler", message.data.bot.isCrawler);
+                        p.innerHTML += renderValue("Behavioral Human Score", message.data.bot.behavioralHumanScore);
+                        p.innerHTML += renderList("Bot Factors", message.data.bot.factors);
+                    }
                     p.innerHTML += `
+                        <br><b>Browser Dataset</b><br>
                         <b>User Agent:</b> ${agent.dataset.userAgent}<br>
                         <b>Platform:</b> ${agent.dataset.platform}<br>
                         <b>Timezone:</b> ${agent.dataset.timezone}<br>
@@ -98,14 +161,31 @@
 										console.warn("Blacklist alert from FP-Devicer: ", message.data);
 										alert(`ALERT: Your device is from a country (${message.data.country}) with a high risk of fraud. FP-Devicer has flagged your fingerprint as potentially malicious based on its IP address and other factors. Please contact support if you believe this is an error.`);
 								}
+
+                if (message.type === "botAlert") {
+                    console.warn("Bot alert from FP-Devicer: ", message.data);
+                    alert(`ALERT: Bot-Block & Anti-Scrape flagged this request as ${message.data.decision}. Bot score: ${message.data.botScore ?? "unknown"}. Factors: ${(message.data.factors || []).join(", ") || "none provided"}.`);
+                }
             };
 
-            ws.onopen = function() {
+            ws.onopen = async function() {
                 console.log("WebSocket connection established with FP-Devicer.");
+                var payload = await agent.capture({
+                    minBehavioralDurationMs: 1500,
+                    maxBehavioralWaitMs: 6000,
+                    pollIntervalMs: 100,
+                    requireInteraction: true,
+                });
+
+                if (ws.readyState !== WebSocket.OPEN) {
+                    console.warn("WebSocket closed before behavioral capture completed.");
+                    return;
+                }
+
                 // Send a message to the server
                 ws.send(JSON.stringify({
                     type: "data",
-                    data: agent.dataset
+                    data: payload
                 }));
             };
         };
