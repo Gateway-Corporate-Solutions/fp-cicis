@@ -288,8 +288,8 @@ app.use(async (context, next) => {
   }
 });
 
-app.listen({ port: parseInt(Deno.env.get('PORT') ?? '5000') });
-console.log('Server is running on http://localhost:5000');
+app.listen({ port: parseInt(Deno.env.get('PORT') ?? '8000') });
+console.log('Server is running on http://localhost:8000');
 
 fingerprints = await adapters.device.getAllFingerprints();
 console.log(`Current fingerprints in database: ${fingerprints.length}`);
