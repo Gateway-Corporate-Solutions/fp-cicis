@@ -62,13 +62,11 @@ export function createDevManagerSqliteAdapter(dbPath: string): devicer.StorageAd
 				const fp = JSON.parse(row.data);
 				return (query.canvas && fp?.canvas === query.canvas) ||
 					(query.webgl && fp?.webgl === query.webgl);
-				// Add more pre-filtering conditions as needed based on your fingerprint structure
-				// The goal is to reduce the number of candidates before doing the full confidence calculation
-				// while still keeping potential matches. This is a balance between recall and performance.
-				// In production, you might want to implement a more sophisticated pre-filtering strategy.
 			});
 
-			const pool = prelim.length > 0 ? prelim : rows; // Fall back to full set if no biometric signals matched
+			// Keep the broader SQL-filtered pool when stronger biometric signals
+			// are unavailable or do not match yet.
+			const pool = prelim.length > 0 ? prelim : rows;
 
 			const candidates: Array<devicer.DeviceMatch & { confidence: number }> = [];
 			for (const row of pool) {
@@ -84,8 +82,7 @@ export function createDevManagerSqliteAdapter(dbPath: string): devicer.StorageAd
 			return candidates.sort((a, b) => b.confidence - a.confidence).slice(0, limit);
 		},
 		linkToUser(_deviceId: string, _userId: string) {
-			// This method would require an additional table to store device-user associations.
-			// For simplicity, it's not implemented here. In a real implementation, you'd want to create a separate "device_users" table and insert/update records there.
+			// This adapter stores fingerprint snapshots only; user-device links are omitted.
 			return Promise.resolve();
 		},
 		// deno-lint-ignore require-await
