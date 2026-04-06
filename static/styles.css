@@ -156,10 +156,13 @@ body {
   padding: 12px;
   max-height: 260px;
   overflow: auto;
-  color: #ffcf9e;
+  color: #ffb570;
   font-family: "Courier New", Courier, monospace;
   font-size: 12px;
+  font-weight: 600;
   line-height: 1.5;
+  letter-spacing: 0.015em;
+  text-rendering: optimizeLegibility;
   white-space: pre-wrap;
   word-break: break-word;
 }
