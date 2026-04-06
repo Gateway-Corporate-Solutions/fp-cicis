@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-import-prefix no-unversioned-import
 import {
   assert,
   assertEquals,
@@ -9,9 +10,11 @@ import {
   SessionStore,
   applySecurityHeaders,
   injectSessionToken,
+  isExternalOriginSecure,
   isOriginAllowed,
   parseClientMessage,
   parseTrustedProxyIps,
+  resolveExternalOrigin,
   resolveClientIp,
   sanitizeUserId,
 } from "../../libs/security.ts";
@@ -58,6 +61,25 @@ Deno.test("origin allowlist only accepts same-origin or configured origins", () 
   assert(isOriginAllowed("https://dashboard.example.com", "http://localhost:5000", ["https://dashboard.example.com"]));
   assert(!isOriginAllowed("https://evil.example.com", "http://localhost:5000", []));
   assert(!isOriginAllowed(null, "http://localhost:5000", []));
+});
+
+Deno.test("external origin resolution honors forwarded headers and explicit public origin", () => {
+  const proxiedHeaders = new Headers({
+    host: "127.0.0.1:5000",
+    "x-forwarded-proto": "https",
+    "x-forwarded-host": "cicis.info",
+  });
+  assertEquals(
+    resolveExternalOrigin(new URL("http://127.0.0.1:5000/wss"), proxiedHeaders),
+    "https://cicis.info",
+  );
+
+  assertEquals(
+    resolveExternalOrigin(new URL("http://127.0.0.1:5000/wss"), new Headers(), "https://cicis.info"),
+    "https://cicis.info",
+  );
+  assertEquals(isExternalOriginSecure("https://cicis.info"), true);
+  assertEquals(isExternalOriginSecure("http://localhost:5000"), false);
 });
 
 Deno.test("trusted proxy logic only honors forwarded IPs from configured proxies", () => {

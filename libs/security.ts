@@ -183,6 +183,41 @@ export function parseConfiguredOrigins(value?: string | null): string[] {
     .filter(Boolean);
 }
 
+function firstForwardedValue(value: string | null): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const [firstEntry] = value.split(",");
+  const normalized = firstEntry?.trim();
+  return normalized ? normalized : null;
+}
+
+export function resolveExternalOrigin(
+  requestUrl: URL,
+  headers: Headers,
+  configuredOrigin?: string | null,
+): string {
+  if (configuredOrigin) {
+    return configuredOrigin;
+  }
+
+  const forwardedProto = firstForwardedValue(headers.get("x-forwarded-proto"));
+  const forwardedHost = firstForwardedValue(headers.get("x-forwarded-host"));
+  const host = forwardedHost ?? headers.get("host") ?? requestUrl.host;
+  const protocol = forwardedProto ?? requestUrl.protocol.replace(/:$/, "");
+
+  return `${protocol}://${host}`;
+}
+
+export function isExternalOriginSecure(origin: string): boolean {
+  try {
+    return new URL(origin).protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
 export function isOriginAllowed(originHeader: string | null, requestOrigin: string, configuredOrigins: string[]): boolean {
   if (!originHeader) {
     return false;

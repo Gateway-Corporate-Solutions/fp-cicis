@@ -20,10 +20,12 @@ import {
   SessionStore,
   applySecurityHeaders,
   injectSessionToken,
+  isExternalOriginSecure,
   isOriginAllowed,
   parseClientMessage,
   parseConfiguredOrigins,
   parseTrustedProxyIps,
+  resolveExternalOrigin,
   resolveClientIp,
   sanitizeUserId,
 } from "./libs/security.ts";
@@ -126,6 +128,7 @@ export async function createApp() {
   const port = parseInt(Deno.env.get("PORT") ?? "8000", 10);
   const trustedProxyIps = parseTrustedProxyIps(Deno.env.get("FP_CICIS_TRUSTED_PROXIES"));
   const configuredOrigins = parseConfiguredOrigins(Deno.env.get("FP_CICIS_ALLOWED_ORIGINS"));
+  const configuredPublicOrigin = Deno.env.get("FP_CICIS_PUBLIC_ORIGIN");
   const sessionStore = new SessionStore();
   const rateLimiter = new RateLimiter();
   const state = await buildApplicationState();
@@ -158,20 +161,22 @@ export async function createApp() {
   }, 600_000);
 
   app.use(async (context, next) => {
+    const externalOrigin = resolveExternalOrigin(context.request.url, context.request.headers, configuredPublicOrigin);
     try {
       await next();
     } finally {
-      applySecurityHeaders(context.response.headers, context.request.url.protocol === "https:");
+      applySecurityHeaders(context.response.headers, isExternalOriginSecure(externalOrigin));
     }
   });
 
   router.get("/", async (context) => {
     const template = await Deno.readTextFile(templatePath);
+    const externalOrigin = resolveExternalOrigin(context.request.url, context.request.headers, configuredPublicOrigin);
     const session = sessionStore.createSession();
     await context.cookies.set(SESSION_COOKIE_NAME, session.id, {
       httpOnly: true,
       sameSite: "strict",
-      secure: context.request.url.protocol === "https:",
+      secure: isExternalOriginSecure(externalOrigin),
       path: "/",
       maxAge: 600,
     });
@@ -185,7 +190,7 @@ export async function createApp() {
       return;
     }
 
-    const requestOrigin = context.request.url.origin;
+    const requestOrigin = resolveExternalOrigin(context.request.url, context.request.headers, configuredPublicOrigin);
     const originHeader = context.request.headers.get("origin");
     if (!isOriginAllowed(originHeader, requestOrigin, configuredOrigins)) {
       context.response.status = 403;
