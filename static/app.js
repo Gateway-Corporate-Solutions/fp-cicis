@@ -23,6 +23,91 @@ function appendBreak(element) {
   element.append(document.createElement("br"));
 }
 
+function getFingerprintCardBody(cardId) {
+  return document.querySelector(`#${cardId} .fp-card-body`);
+}
+
+function setCardVisibility(cardId, isVisible) {
+  const card = document.getElementById(cardId);
+  if (!card) {
+    return;
+  }
+
+  card.style.display = isVisible ? "block" : "none";
+}
+
+function appendCardEntry(element, label, value) {
+  if (!element || value === null || value === undefined || value === "") {
+    return;
+  }
+
+  const row = document.createElement("div");
+  row.className = "fp-entry";
+
+  const labelNode = document.createElement("span");
+  labelNode.className = "fp-label";
+  labelNode.textContent = label;
+
+  const valueNode = document.createElement("span");
+  valueNode.className = "fp-value";
+  valueNode.textContent = String(value);
+
+  row.append(labelNode, valueNode);
+  element.append(row);
+}
+
+function appendCardBoolean(element, label, value) {
+  if (typeof value !== "boolean") {
+    return;
+  }
+
+  appendCardEntry(element, label, value ? "Yes" : "No");
+}
+
+function appendCardList(element, label, values) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return;
+  }
+
+  appendCardEntry(element, label, values.join(", "));
+}
+
+function appendBrowserPanel(element, label, value) {
+  if (!element || value === null || value === undefined || value === "") {
+    return;
+  }
+
+  const panel = document.createElement("section");
+  panel.className = "fp-browser-panel";
+
+  const labelNode = document.createElement("span");
+  labelNode.className = "fp-browser-panel-label";
+  labelNode.textContent = label;
+
+  const valueNode = document.createElement("pre");
+  valueNode.className = "fp-browser-json";
+  valueNode.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+
+  panel.append(labelNode, valueNode);
+  element.append(panel);
+}
+
+function clearFingerprintCards() {
+  const cardIds = [
+    "fp-card-core",
+    "fp-card-ip",
+    "fp-card-tls",
+    "fp-card-peer",
+    "fp-card-bot",
+    "fp-card-browser",
+  ];
+
+  for (const cardId of cardIds) {
+    clearElement(getFingerprintCardBody(cardId));
+    setCardVisibility(cardId, true);
+  }
+}
+
 function appendLabelValue(element, label, value) {
   if (value === null || value === undefined || value === "") {
     return;
@@ -34,30 +119,24 @@ function appendLabelValue(element, label, value) {
   appendBreak(element);
 }
 
-function appendBoolean(element, label, value) {
-  if (typeof value !== "boolean") {
+function appendAnalyticsEntry(element, label, value) {
+  if (!element || value === null || value === undefined || value === "") {
     return;
   }
 
-  appendLabelValue(element, label, value ? "Yes" : "No");
-}
+  const entry = document.createElement("div");
+  entry.className = "analytics-entry";
 
-function appendList(element, label, values) {
-  if (!Array.isArray(values) || values.length === 0) {
-    return;
-  }
+  const labelNode = document.createElement("span");
+  labelNode.className = "analytics-label";
+  labelNode.textContent = label;
 
-  appendLabelValue(element, label, values.join(", "));
-}
+  const valueNode = document.createElement("span");
+  valueNode.className = "analytics-value";
+  valueNode.textContent = String(value);
 
-function appendSectionHeading(element, text) {
-  if (element.childNodes.length > 0) {
-    appendBreak(element);
-  }
-  const heading = document.createElement("strong");
-  heading.textContent = text;
-  element.append(heading);
-  appendBreak(element);
+  entry.append(labelNode, valueNode);
+  element.append(entry);
 }
 
 function renderAnalytics(target, analytics) {
@@ -66,18 +145,28 @@ function renderAnalytics(target, analytics) {
   }
 
   clearElement(target);
-  appendLabelValue(target, "Total Fingerprints", analytics.totalFingerprints);
-  appendLabelValue(target, "Unique Fingerprints", analytics.uniqueFingerprints);
-  appendLabelValue(target, "Fingerprint Clusters", analytics.clusters);
-  appendLabelValue(target, "Average Cluster Size", analytics.averageClusterSize);
+  appendAnalyticsEntry(target, "Total Fingerprints", analytics.totalFingerprints);
+  appendAnalyticsEntry(target, "Unique Fingerprints", analytics.uniqueFingerprints);
+  appendAnalyticsEntry(target, "Fingerprint Clusters", analytics.clusters);
+  appendAnalyticsEntry(target, "Average Cluster Size", analytics.averageClusterSize);
 }
 
-function appendAgentDataset(target, agent) {
-  appendSectionHeading(target, "Browser Dataset");
-  appendLabelValue(target, "User Agent", agent?.dataset?.userAgent ?? null);
-  appendLabelValue(target, "Platform", agent?.dataset?.platform ?? null);
-  appendLabelValue(target, "Timezone", agent?.dataset?.timezone ?? null);
-  appendLabelValue(target, "User Data", JSON.stringify(agent?.dataset ?? {}));
+function renderBrowserCard(agent) {
+  const browserCard = getFingerprintCardBody("fp-card-browser");
+  if (!browserCard) {
+    return;
+  }
+
+  clearElement(browserCard);
+
+  const metadata = document.createElement("div");
+  metadata.className = "fp-browser-meta";
+  browserCard.append(metadata);
+
+  appendCardEntry(metadata, "User Agent", agent?.dataset?.userAgent ?? null);
+  appendCardEntry(metadata, "Platform", agent?.dataset?.platform ?? null);
+  appendCardEntry(metadata, "Timezone", agent?.dataset?.timezone ?? null);
+  appendBrowserPanel(browserCard, "Full Dataset", agent?.dataset ?? {});
 }
 
 function renderFingerprint(target, payload, agent) {
@@ -86,58 +175,70 @@ function renderFingerprint(target, payload, agent) {
   }
 
   clearElement(target);
-  appendLabelValue(target, "Fingerprint Hash", payload.hash);
-  appendLabelValue(target, "Device ID", payload.deviceId);
-  appendBoolean(target, "New Device", payload.isNewDevice);
+  clearFingerprintCards();
+
+  const coreCard = getFingerprintCardBody("fp-card-core");
+  const ipCard = getFingerprintCardBody("fp-card-ip");
+  const tlsCard = getFingerprintCardBody("fp-card-tls");
+  const peerCard = getFingerprintCardBody("fp-card-peer");
+  const botCard = getFingerprintCardBody("fp-card-bot");
+
+  appendCardEntry(coreCard, "Fingerprint Hash", payload.hash);
+  appendCardEntry(coreCard, "Device ID", payload.deviceId);
+  appendCardBoolean(coreCard, "New Device", payload.isNewDevice);
 
   if (payload.closestMatch === 100) {
-    appendLabelValue(target, "Closest Match", `${payload.closestMatch} (Exact Match)`);
+    appendCardEntry(coreCard, "Closest Match", `${payload.closestMatch} (Exact Match)`);
   } else if (typeof payload.closestMatch === "number" && payload.closestMatch >= 85) {
-    appendLabelValue(target, "Closest Match", `${payload.closestMatch} (Close Match)`);
+    appendCardEntry(coreCard, "Closest Match", `${payload.closestMatch} (Close Match)`);
   } else {
-    appendLabelValue(target, "Closest Match", `${payload.closestMatch ?? 0} (No Close Match)`);
+    appendCardEntry(coreCard, "Closest Match", `${payload.closestMatch ?? 0} (No Close Match)`);
   }
 
   if (payload.ip) {
-    appendSectionHeading(target, "IP Enrichment");
-    appendLabelValue(target, "Country", payload.ip.country);
-    appendLabelValue(target, "Risk Score", payload.ip.riskScore);
-    appendBoolean(target, "Proxy", payload.ip.isProxy);
-    appendBoolean(target, "VPN", payload.ip.isVpn);
-    appendBoolean(target, "Tor", payload.ip.isTor);
-    appendBoolean(target, "Hosting", payload.ip.isHosting);
-    appendBoolean(target, "AI Agent", payload.ip.isAiAgent);
-    appendLabelValue(target, "AI Agent Provider", payload.ip.aiAgentProvider);
+    appendCardEntry(ipCard, "Country", payload.ip.country);
+    appendCardEntry(ipCard, "Risk Score", payload.ip.riskScore);
+    appendCardBoolean(ipCard, "Proxy", payload.ip.isProxy);
+    appendCardBoolean(ipCard, "VPN", payload.ip.isVpn);
+    appendCardBoolean(ipCard, "Tor", payload.ip.isTor);
+    appendCardBoolean(ipCard, "Hosting", payload.ip.isHosting);
+    appendCardBoolean(ipCard, "AI Agent", payload.ip.isAiAgent);
+    appendCardEntry(ipCard, "AI Agent Provider", payload.ip.aiAgentProvider);
+  } else {
+    setCardVisibility("fp-card-ip", false);
   }
 
   if (payload.tls) {
-    appendSectionHeading(target, "TLS Enrichment");
-    appendLabelValue(target, "Consistency Score", payload.tls.consistencyScore);
-    appendBoolean(target, "JA4 Match", payload.tls.ja4Match);
-    appendList(target, "TLS Factors", payload.tls.factors);
+    appendCardEntry(tlsCard, "Consistency Score", payload.tls.consistencyScore);
+    appendCardBoolean(tlsCard, "JA4 Match", payload.tls.ja4Match);
+    appendCardList(tlsCard, "TLS Factors", payload.tls.factors);
+  } else {
+    setCardVisibility("fp-card-tls", false);
   }
 
   if (payload.peer) {
-    appendSectionHeading(target, "Peer Reputation");
-    appendLabelValue(target, "Peer Count", payload.peer.peerCount);
-    appendLabelValue(target, "Taint Score", payload.peer.taintScore);
-    appendLabelValue(target, "Trust Score", payload.peer.trustScore);
-    appendLabelValue(target, "Confidence Boost", payload.peer.confidenceBoost);
-    appendList(target, "Peer Factors", payload.peer.factors);
+    appendCardEntry(peerCard, "Peer Count", payload.peer.peerCount);
+    appendCardEntry(peerCard, "Taint Score", payload.peer.taintScore);
+    appendCardEntry(peerCard, "Trust Score", payload.peer.trustScore);
+    appendCardEntry(peerCard, "Confidence Boost", payload.peer.confidenceBoost);
+    appendCardList(peerCard, "Peer Factors", payload.peer.factors);
+  } else {
+    setCardVisibility("fp-card-peer", false);
   }
 
   if (payload.bot) {
-    appendSectionHeading(target, "Bot Analysis");
-    appendLabelValue(target, "Decision", payload.bot.decision);
-    appendLabelValue(target, "Bot Score", payload.bot.botScore);
-    appendBoolean(target, "Headless", payload.bot.isHeadless);
-    appendBoolean(target, "Bot UA", payload.bot.isBot);
-    appendBoolean(target, "Crawler", payload.bot.isCrawler);
-    appendLabelValue(target, "Behavioral Human Score", payload.bot.behavioralHumanScore);
-    appendList(target, "Bot Factors", payload.bot.factors);
+    appendCardEntry(botCard, "Decision", payload.bot.decision);
+    appendCardEntry(botCard, "Bot Score", payload.bot.botScore);
+    appendCardBoolean(botCard, "Headless", payload.bot.isHeadless);
+    appendCardBoolean(botCard, "Bot UA", payload.bot.isBot);
+    appendCardBoolean(botCard, "Crawler", payload.bot.isCrawler);
+    appendCardEntry(botCard, "Behavioral Human Score", payload.bot.behavioralHumanScore);
+    appendCardList(botCard, "Bot Factors", payload.bot.factors);
+  } else {
+    setCardVisibility("fp-card-bot", false);
   }
 
-  appendAgentDataset(target, agent);
+  renderBrowserCard(agent);
 }
 
 function renderError(target, message, agent) {
@@ -147,7 +248,13 @@ function renderError(target, message, agent) {
 
   clearElement(target);
   appendLabelValue(target, "Error", message);
-  appendAgentDataset(target, agent);
+  clearFingerprintCards();
+  setCardVisibility("fp-card-core", false);
+  setCardVisibility("fp-card-ip", false);
+  setCardVisibility("fp-card-tls", false);
+  setCardVisibility("fp-card-peer", false);
+  setCardVisibility("fp-card-bot", false);
+  renderBrowserCard(agent);
 }
 
 async function collectFingerprintPayload(agent) {
@@ -177,7 +284,8 @@ function initializeClient() {
   }
 
   const tokenMeta = document.querySelector('meta[name="fp-cicis-ws-token"]');
-  const fingerprintEl = document.getElementById("fingerprint");
+  const fingerprintEl = document.getElementById("fp-status");
+  const analyticsStatusEl = document.getElementById("analytics-status");
   const analyticsEl = document.getElementById("analytics");
   const sessionToken = tokenMeta?.getAttribute("content") ?? "";
 
@@ -203,6 +311,7 @@ function initializeClient() {
           renderError(fingerprintEl, message.data, agent);
           break;
         case "analytics":
+          clearElement(analyticsStatusEl);
           renderAnalytics(analyticsEl, message.data);
           break;
         case "blacklistAlert":

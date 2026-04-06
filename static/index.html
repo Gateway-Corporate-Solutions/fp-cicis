@@ -50,11 +50,40 @@
     </div>
     <div class="content">
         <h2>Your Device Fingerprint</h2>
-        <p id="fingerprint">Loading fingerprint data...</p>
+        <p id="fp-status">Loading fingerprint data...</p>
+        <div id="fp-grid" aria-live="polite">
+            <div class="fp-card" id="fp-card-core">
+                <h3>Fingerprint</h3>
+                <div class="fp-card-body"></div>
+            </div>
+            <div class="fp-card" id="fp-card-ip">
+                <h3>IP Enrichment</h3>
+                <div class="fp-card-body"></div>
+            </div>
+            <div class="fp-card" id="fp-card-tls">
+                <h3>TLS Enrichment</h3>
+                <div class="fp-card-body"></div>
+            </div>
+            <div class="fp-card" id="fp-card-peer">
+                <h3>Peer Reputation</h3>
+                <div class="fp-card-body"></div>
+            </div>
+            <div class="fp-card" id="fp-card-bot">
+                <h3>Bot Analysis</h3>
+                <div class="fp-card-body"></div>
+            </div>
+            <div class="fp-card fp-card-browser" id="fp-card-browser">
+                <h3>Browser Dataset</h3>
+                <div class="fp-card-body"></div>
+            </div>
+        </div>
     </div>
     <div class="content">
         <h2>Server Analytics</h2>
-        <p id="analytics">Loading analytics data...</p>
+        <p id="analytics-status">Loading analytics data...</p>
+        <div class="analytics-panel" id="analytics-panel" aria-live="polite">
+            <div class="analytics-panel-body" id="analytics"></div>
+        </div>
     </div>
     <div id="footer">
         <p>© 2025 Gateway Corporate Solutions. All rights reserved.</p>
