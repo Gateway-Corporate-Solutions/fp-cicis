@@ -68,6 +68,28 @@ export function injectSessionToken(template: string, token: string): string {
   return template.replaceAll("__WS_SESSION_TOKEN__", token);
 }
 
+export function buildSessionCookieHeader(
+  name: string,
+  value: string,
+  secure: boolean,
+  maxAgeSeconds: number,
+): string {
+  const segments = [
+    `${name}=${encodeURIComponent(value)}`,
+    "Path=/",
+    `Max-Age=${maxAgeSeconds}`,
+    `Expires=${new Date(Date.now() + maxAgeSeconds * 1000).toUTCString()}`,
+    "SameSite=Strict",
+    "HttpOnly",
+  ];
+
+  if (secure) {
+    segments.push("Secure");
+  }
+
+  return segments.join("; ");
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }

@@ -9,6 +9,7 @@ import {
   RateLimiter,
   SessionStore,
   applySecurityHeaders,
+  buildSessionCookieHeader,
   injectSessionToken,
   isExternalOriginSecure,
   isOriginAllowed,
@@ -129,6 +130,15 @@ Deno.test("session token injection replaces every placeholder", () => {
   const token = "abc123";
   const rendered = injectSessionToken("token=__WS_SESSION_TOKEN__&again=__WS_SESSION_TOKEN__", token);
   assertEquals(rendered, "token=abc123&again=abc123");
+});
+
+Deno.test("session cookie header can be emitted for proxied secure requests", () => {
+  const header = buildSessionCookieHeader("fp_cicis_session", "session-id", true, 600);
+  assertMatch(header, /^fp_cicis_session=session-id; Path=\//);
+  assertMatch(header, /Max-Age=600/);
+  assertMatch(header, /SameSite=Strict/);
+  assertMatch(header, /HttpOnly/);
+  assertMatch(header, /Secure/);
 });
 
 Deno.test("user ids are narrowed to safe characters", () => {

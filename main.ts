@@ -15,6 +15,7 @@ import {
 } from "./libs/sqlite.ts";
 import { clusterFingerprints } from "./libs/clustering.ts";
 import {
+  buildSessionCookieHeader,
   SESSION_COOKIE_NAME,
   RateLimiter,
   SessionStore,
@@ -172,14 +173,12 @@ export async function createApp() {
   router.get("/", async (context) => {
     const template = await Deno.readTextFile(templatePath);
     const externalOrigin = resolveExternalOrigin(context.request.url, context.request.headers, configuredPublicOrigin);
+    const secureCookie = isExternalOriginSecure(externalOrigin);
     const session = sessionStore.createSession();
-    await context.cookies.set(SESSION_COOKIE_NAME, session.id, {
-      httpOnly: true,
-      sameSite: "strict",
-      secure: isExternalOriginSecure(externalOrigin),
-      path: "/",
-      maxAge: 600,
-    });
+    context.response.headers.append(
+      "set-cookie",
+      buildSessionCookieHeader(SESSION_COOKIE_NAME, session.id, secureCookie, 600),
+    );
     context.response.body = injectSessionToken(template, session.token);
   });
 
